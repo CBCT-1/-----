@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-Export authorized Chaoxing/Xuexitong courseware and review questions from a
-logged-in Chromium/Edge session exposed through Chrome DevTools Protocol.
-
-This script is intentionally conservative: it records unpublished answers as
-未公布 and never attempts to submit or modify coursework.
+Export authorized Chaoxing/Xuexitong course resources from a logged-in browser:
+1) Homework + in-class quiz questions to JSON/DOCX
+2) Chapter courseware attachments (ppt/pptx/pdf/doc/docx) to local files
 """
 
 from __future__ import annotations
@@ -28,19 +26,21 @@ from bs4 import BeautifulSoup
 
 
 TYPE_MAP = {
-    0: "单选题",
-    1: "多选题",
-    2: "填空题",
-    3: "判断题",
-    4: "简答题",
-    5: "名词解释",
-    6: "论述题",
-    7: "计算题",
-    9: "填空题",
-    10: "填空题",
-    16: "判断题",
-    18: "口语题",
+    0: "Single Choice",
+    1: "Multiple Choice",
+    2: "Fill Blank",
+    3: "True/False",
+    4: "Short Answer",
+    5: "Term Explanation",
+    6: "Essay",
+    7: "Calculation",
+    9: "Fill Blank",
+    10: "Fill Blank",
+    16: "True/False",
+    18: "Oral",
 }
+
+DOWNLOAD_EXTS = {".ppt", ".pptx", ".pdf", ".doc", ".docx"}
 
 
 def clean_text(value: Any) -> str:
@@ -69,8 +69,8 @@ class CDP:
         self._idx = 0
 
     def tabs(self) -> list[dict[str, Any]]:
-        with urllib.request.urlopen(f"{self.cdp_base}/json/list") as r:
-            return json.load(r)
+        with urllib.request.urlopen(f"{self.cdp_base}/json/list") as response:
+            return json.load(response)
 
     def find_tab(self, pattern: str = "chaoxing.com") -> dict[str, Any]:
         for tab in self.tabs():
@@ -100,10 +100,9 @@ class CDP:
                 ws,
                 "Runtime.evaluate",
                 {
-                    "expression": """(()=>({
+                    "expression": """(() => ({
                         href: location.href,
-                        title: document.title,
-                        frames: Array.from(document.querySelectorAll('iframe,frame')).map(f=>({id:f.id,name:f.name,src:f.src}))
+                        title: document.title
                     }))()""",
                     "returnByValue": True,
                     "awaitPromise": True,
@@ -131,27 +130,27 @@ def query(url: str) -> dict[str, str]:
 
 
 def parse_homework_list(session: requests.Session, course_id: str, class_id: str, cpi: str) -> list[dict[str, str]]:
-    url = f"https://mooc1.chaoxing.com/mooc2/work/list?courseId={course_id}&classId={class_id}&cpi={cpi}&ut=s&t={int(time.time()*1000)}"
+    url = f"https://mooc1.chaoxing.com/mooc2/work/list?courseId={course_id}&classId={class_id}&cpi={cpi}&ut=s&t={int(time.time() * 1000)}"
     soup = BeautifulSoup(session.get(url, timeout=40).text, "html.parser")
     works = []
     for li in soup.select('li[onclick*="goTask"]'):
         task_url = html.unescape(li.get("data") or "")
         name = clean_text((li.select_one(".right-content p:first-child") or li).get_text(" "))
         status_el = li.select_one("p.status")
-        works.append({"source": "作业", "name": name, "status": clean_text(status_el.get_text(" ")) if status_el else "", "url": task_url})
-    return [w for w in works if w["url"]]
+        works.append({"source": "homework", "name": name, "status": clean_text(status_el.get_text(" ")) if status_el else "", "url": task_url})
+    return [item for item in works if item["url"]]
 
 
 def parse_homework_page(session: requests.Session, work: dict[str, str], course_id: str, class_id: str, cpi: str) -> list[dict[str, Any]]:
     response = session.get(work["url"], timeout=40, allow_redirects=True)
     soup = BeautifulSoup(response.text, "html.parser")
     if not soup.select(".questionLi"):
-        ids = {key: (soup.select_one(f"#{key}") or {}).get("value") for key in ["workId", "answerId", "enc", "standardEnc"]}
-        if all(ids.values()):
+        hidden = {key: (soup.select_one(f"#{key}") or {}).get("value") for key in ["workId", "answerId", "enc", "standardEnc"]}
+        if all(hidden.values()):
             retry = (
                 "https://mooc1.chaoxing.com/mooc-ans/mooc2/work/view"
-                f"?courseId={course_id}&classId={class_id}&cpi={cpi}&workId={ids['workId']}"
-                f"&answerId={ids['answerId']}&standardEnc={ids['standardEnc']}&enc={ids['enc']}"
+                f"?courseId={course_id}&classId={class_id}&cpi={cpi}&workId={hidden['workId']}"
+                f"&answerId={hidden['answerId']}&standardEnc={hidden['standardEnc']}&enc={hidden['enc']}"
             )
             soup = BeautifulSoup(session.get(retry, timeout=40).text, "html.parser")
 
@@ -161,56 +160,55 @@ def parse_homework_page(session: requests.Session, work: dict[str, str], course_
     for q in soup.select(".questionLi"):
         name_el = q.select_one(".mark_name")
         raw = clean_text(name_el.get_text(" ", strip=True)) if name_el else ""
-        match = re.match(r"^(\d+)\.\s*(?:\(([^)）]+)[)）])?\s*(.*)$", raw, flags=re.S)
+        match = re.match(r"^(\d+)\.\s*(?:\(([^)]+)\))?\s*(.*)$", raw, flags=re.S)
         num = match.group(1) if match else str(len(questions) + 1)
         qtype = match.group(2) if match and match.group(2) else ""
         stem = match.group(3).strip() if match else raw
-        questions.append(
-            {
-                "source": "作业",
-                "set": title,
-                "status": work.get("status", ""),
-                "num": num,
-                "type": qtype,
-                "stem": stem,
-                "options": [clean_text(li.get_text(" ", strip=True)) for li in q.select(".qtDetail li")],
-                "student_answer": clean_text(q.select_one(".stuAnswerContent").get_text(" ", strip=True)) if q.select_one(".stuAnswerContent") else "",
-                "answer": clean_text(q.select_one(".rightAnswerContent").get_text(" ", strip=True)) if q.select_one(".rightAnswerContent") else "",
-                "analysis": clean_text(q.select_one(".qtAnalysis").get_text(" ", strip=True)) if q.select_one(".qtAnalysis") else "",
-            }
-        )
-    for q in questions:
-        q["answer_source"] = "学习通" if q["answer"] else "未公布"
+        item = {
+            "source": "homework",
+            "set": title,
+            "status": work.get("status", ""),
+            "num": num,
+            "type": qtype,
+            "stem": stem,
+            "options": [clean_text(li.get_text(" ", strip=True)) for li in q.select(".qtDetail li")],
+            "student_answer": clean_text(q.select_one(".stuAnswerContent").get_text(" ", strip=True)) if q.select_one(".stuAnswerContent") else "",
+            "answer": clean_text(q.select_one(".rightAnswerContent").get_text(" ", strip=True)) if q.select_one(".rightAnswerContent") else "",
+            "analysis": clean_text(q.select_one(".qtAnalysis").get_text(" ", strip=True)) if q.select_one(".qtAnalysis") else "",
+        }
+        item["answer_source"] = "chaoxing" if item["answer"] else "unpublished"
+        questions.append(item)
     return questions
 
 
 def parse_activity_list(session: requests.Session, fid: str, course_id: str, class_id: str) -> list[dict[str, str]]:
     url = "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist"
-    data = session.get(
+    payload = session.get(
         url,
         params={"fid": fid, "courseId": course_id, "classId": class_id, "showNotStartedActive": "0"},
         timeout=40,
-    ).json()["data"]["activeList"]
+    ).json()
+    data = ((payload.get("data") or {}).get("activeList")) or []
     return [
-        {"source": "随堂练习", "name": a.get("nameOne") or f"随堂练习 {a.get('id')}", "status": str(a.get("status")), "id": str(a.get("id"))}
+        {"source": "quiz", "name": a.get("nameOne") or f"quiz-{a.get('id')}", "status": str(a.get("status")), "id": str(a.get("id"))}
         for a in data
         if str(a.get("activeType")) == "42"
     ]
 
 
-def answer_from_quiz_question(q: dict[str, Any]) -> str:
+def answer_from_quiz_question(question: dict[str, Any]) -> str:
     for key in ["rightAnswer", "answerStr", "answerResult", "standardAnswer", "correctAnswer", "answerContent"]:
-        if q.get(key) not in [None, "", []]:
-            return clean_text(q.get(key))
+        if question.get(key) not in [None, "", []]:
+            return clean_text(question.get(key))
     letters = []
-    for option in q.get("answer") or []:
+    for option in question.get("answer") or []:
         if option.get("isanswer") in [1, "1", True] or option.get("isRight") in [1, "1", True] or option.get("right") in [1, "1", True]:
             letters.append(clean_text(option.get("name")))
     return "".join(letters)
 
 
-def student_quiz_answer(q: dict[str, Any]) -> str:
-    person = q.get("personAnswer") or {}
+def student_quiz_answer(question: dict[str, Any]) -> str:
+    person = question.get("personAnswer") or {}
     if person.get("myoption") not in [None, ""]:
         return clean_text(person.get("myoption"))
     if person.get("blankAnswer"):
@@ -219,40 +217,150 @@ def student_quiz_answer(q: dict[str, Any]) -> str:
 
 
 def parse_quiz(session: requests.Session, activity: dict[str, str]) -> list[dict[str, Any]]:
-    result = session.get("https://mobilelearn.chaoxing.com/v2/apis/studentQuestion/getAnswerResult", params={"activeId": activity["id"]}, timeout=40).json()
-    if result.get("result") != 1:
-        result = session.get(
+    response = session.get("https://mobilelearn.chaoxing.com/v2/apis/studentQuestion/getAnswerResult", params={"activeId": activity["id"]}, timeout=40).json()
+    if response.get("result") != 1:
+        response = session.get(
             "https://mobilelearn.chaoxing.com/v2/apis/quiz/quizDetail2",
             params={"activeId": activity["id"], "moreClassAttendEnc": "", "DB_STRATEGY": "PRIMARY_KEY", "STRATEGY_PARA": "activeId"},
             timeout=40,
         ).json()
-    data = result.get("data") or {}
+    data = response.get("data") or {}
     qlist = data.get("questionList") or data.get("questionlist") or []
     active = data.get("active") or data.get("pptActive") or {}
     title = active.get("name") or activity["name"]
+
     questions = []
-    for idx, q in enumerate(qlist, 1):
-        answer = answer_from_quiz_question(q)
-        questions.append(
-            {
-                "source": "随堂练习",
-                "set": title,
-                "status": "进行中" if activity.get("status") == "1" else "已结束",
-                "num": str(idx),
-                "type": TYPE_MAP.get(q.get("type"), f"题型{q.get('type')}"),
-                "stem": clean_text(q.get("content")),
-                "options": [
-                    f"{clean_text(o.get('name'))}. {clean_text(o.get('content'))}".strip()
-                    for o in q.get("answer") or []
-                    if clean_text(o.get("name")) or clean_text(o.get("content"))
-                ],
-                "student_answer": student_quiz_answer(q),
-                "answer": answer,
-                "analysis": clean_text(q.get("analysis") or q.get("answerAnalysis") or q.get("resolve")),
-                "answer_source": "学习通" if answer else "未公布",
-            }
-        )
+    for idx, question in enumerate(qlist, 1):
+        answer = answer_from_quiz_question(question)
+        item = {
+            "source": "quiz",
+            "set": title,
+            "status": "ongoing" if activity.get("status") == "1" else "ended",
+            "num": str(idx),
+            "type": TYPE_MAP.get(question.get("type"), f"type-{question.get('type')}"),
+            "stem": clean_text(question.get("content")),
+            "options": [
+                f"{clean_text(o.get('name'))}. {clean_text(o.get('content'))}".strip()
+                for o in question.get("answer") or []
+                if clean_text(o.get("name")) or clean_text(o.get("content"))
+            ],
+            "student_answer": student_quiz_answer(question),
+            "answer": answer,
+            "analysis": clean_text(question.get("analysis") or question.get("answerAnalysis") or question.get("resolve")),
+            "answer_source": "chaoxing" if answer else "unpublished",
+        }
+        questions.append(item)
     return questions
+
+
+def chapter_items(session: requests.Session, course_id: str, class_id: str, cpi: str) -> list[dict[str, str]]:
+    url = "https://mooc2-ans.chaoxing.com/mooc2-ans/mycourse/studentcourse"
+    response = session.get(
+        url,
+        params={"courseid": course_id, "clazzid": class_id, "cpi": cpi, "ut": "s"},
+        timeout=40,
+    )
+    soup = BeautifulSoup(response.text, "html.parser")
+    items = []
+    for node in soup.select(".chapter_item"):
+        onclick = node.get("onclick") or ""
+        match = re.search(r"toOld\([^,]+,\s*([0-9]+)\s*,", onclick)
+        if not match:
+            continue
+        title = clean_text(node.get_text(" ")) or f"chapter-{match.group(1)}"
+        items.append({"knowledgeid": match.group(1), "title": title})
+    dedup = {}
+    for item in items:
+        dedup[item["knowledgeid"]] = item
+    return list(dedup.values())
+
+
+def extract_attachments_from_cards(cards_html: str) -> list[dict[str, str]]:
+    attachments: list[dict[str, str]] = []
+    for block in re.finditer(r'"objectid"\s*:\s*"([^"]+)".{0,600}?"name"\s*:\s*"([^"]+)"', cards_html, flags=re.S):
+        object_id = block.group(1).strip()
+        name = clean_text(block.group(2))
+        attachments.append({"objectid": object_id, "name": name})
+    return attachments
+
+
+def resolve_download_url(session: requests.Session, object_id: str) -> tuple[str | None, str | None]:
+    status_url = f"https://mooc1.chaoxing.com/ananas/status/{object_id}"
+    response = session.get(status_url, params={"_dc": str(int(time.time() * 1000))}, timeout=40)
+    if response.status_code != 200:
+        return None, None
+    data = response.json()
+    for key in ["download", "dtoken", "httppath", "http"]:
+        value = data.get(key)
+        if isinstance(value, str) and value.startswith("http"):
+            filename = data.get("filename") or data.get("name")
+            return value, clean_text(filename) if filename else None
+    return None, None
+
+
+def ensure_extension(name: str, url: str) -> str:
+    suffix = Path(urllib.parse.urlsplit(url).path).suffix.lower()
+    if suffix in DOWNLOAD_EXTS and not Path(name).suffix:
+        return f"{name}{suffix}"
+    return name
+
+
+def download_courseware(session: requests.Session, out_dir: Path, course_id: str, class_id: str, cpi: str) -> list[dict[str, Any]]:
+    files_dir = out_dir / "courseware"
+    files_dir.mkdir(parents=True, exist_ok=True)
+
+    saved = []
+    seen_objectids = set()
+    chapters = chapter_items(session, course_id, class_id, cpi)
+    for chapter in chapters:
+        cards_url = "https://mooc1.chaoxing.com/mooc-ans/knowledge/cards"
+        cards = session.get(
+            cards_url,
+            params={
+                "clazzid": class_id,
+                "courseid": course_id,
+                "knowledgeid": chapter["knowledgeid"],
+                "num": "0",
+                "ut": "s",
+                "cpi": cpi,
+                "mooc2": "1",
+            },
+            timeout=40,
+        )
+        for attachment in extract_attachments_from_cards(cards.text):
+            object_id = attachment["objectid"]
+            if object_id in seen_objectids:
+                continue
+            seen_objectids.add(object_id)
+
+            download_url, filename = resolve_download_url(session, object_id)
+            if not download_url:
+                continue
+            raw_name = filename or attachment["name"] or f"{object_id}.bin"
+            raw_name = ensure_extension(raw_name, download_url)
+            ext = Path(raw_name).suffix.lower()
+            if ext and ext not in DOWNLOAD_EXTS:
+                continue
+            safe_filename = safe_name(raw_name)
+            target = files_dir / safe_filename
+
+            with session.get(download_url, stream=True, timeout=120) as response:
+                response.raise_for_status()
+                with target.open("wb") as fh:
+                    for chunk in response.iter_content(chunk_size=1024 * 128):
+                        if chunk:
+                            fh.write(chunk)
+
+            saved.append(
+                {
+                    "chapter": chapter["title"],
+                    "knowledgeid": chapter["knowledgeid"],
+                    "objectid": object_id,
+                    "filename": safe_filename,
+                    "path": str(target),
+                }
+            )
+    return saved
 
 
 def build_docx(path: Path, title: str, questions: list[dict[str, Any]], include_answers: bool) -> None:
@@ -262,20 +370,20 @@ def build_docx(path: Path, title: str, questions: list[dict[str, Any]], include_
 
     body = [para(title, "Title")]
     current = None
-    for q in questions:
-        group = f"{q['source']} - {q['set']}"
+    for question in questions:
+        group = f"{question['source']} - {question['set']}"
         if group != current:
             body.append(para(group, "Heading1"))
             current = group
-        body.append(para(f"{q['num']}. [{q['type']}] {q['stem']}"))
-        for option in q.get("options") or []:
+        body.append(para(f"{question['num']}. [{question['type']}] {question['stem']}"))
+        for option in question.get("options") or []:
             body.append(para(f"    {option}"))
         if include_answers:
-            body.append(para(f"答案：{q.get('answer') or '未公布'}（来源：{q.get('answer_source') or '未公布'}）"))
-            if q.get("analysis"):
-                body.append(para(f"解析：{q['analysis']}"))
-            if q.get("student_answer"):
-                body.append(para(f"我的答案：{q['student_answer']}"))
+            body.append(para(f"Answer: {question.get('answer') or 'unpublished'} (source: {question.get('answer_source') or 'unpublished'})"))
+            if question.get("analysis"):
+                body.append(para(f"Analysis: {question['analysis']}"))
+            if question.get("student_answer"):
+                body.append(para(f"My Answer: {question['student_answer']}"))
 
     document = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -296,19 +404,20 @@ def build_docx(path: Path, title: str, questions: list[dict[str, Any]], include_
     )
     rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'
     doc_rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", content_types)
-        z.writestr("_rels/.rels", rels)
-        z.writestr("word/_rels/document.xml.rels", doc_rels)
-        z.writestr("word/document.xml", document)
-        z.writestr("word/styles.xml", styles)
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", content_types)
+        archive.writestr("_rels/.rels", rels)
+        archive.writestr("word/_rels/document.xml.rels", doc_rels)
+        archive.writestr("word/document.xml", document)
+        archive.writestr("word/styles.xml", styles)
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cdp", default="http://127.0.0.1:9222")
     parser.add_argument("--out", default=".")
-    parser.add_argument("--mode", choices=["questions", "all"], default="questions")
+    parser.add_argument("--mode", choices=["questions", "courseware", "all"], default="all")
     parser.add_argument("--course-id")
     parser.add_argument("--class-id")
     parser.add_argument("--cpi")
@@ -317,33 +426,50 @@ async def main() -> None:
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+
     cdp = CDP(args.cdp)
     state = await cdp.course_state()
-    q = query(state["href"])
-    course_id = args.course_id or q.get("courseid") or q.get("courseId")
-    class_id = args.class_id or q.get("clazzid") or q.get("classId")
-    cpi = args.cpi or q.get("cpi")
+    params = query(state["href"])
+    course_id = args.course_id or params.get("courseid") or params.get("courseId")
+    class_id = args.class_id or params.get("clazzid") or params.get("classId")
+    cpi = args.cpi or params.get("cpi")
     if not (course_id and class_id and cpi):
-        raise RuntimeError("Could not infer course-id, class-id, and cpi from the active course tab.")
+        raise RuntimeError("Could not infer course-id/class-id/cpi from the current course tab.")
 
     session = make_session(await cdp.cookies())
-    questions = []
-    for work in parse_homework_list(session, course_id, class_id, cpi):
-        questions.extend(parse_homework_page(session, work, course_id, class_id, cpi))
-    for activity in parse_activity_list(session, args.fid, course_id, class_id):
-        questions.extend(parse_quiz(session, activity))
 
-    (out / "chaoxing_questions_raw.json").write_text(json.dumps(questions, ensure_ascii=False, indent=2), encoding="utf-8")
-    build_docx(out / "chaoxing_review_questions.docx", "学习通期末复习题", questions, include_answers=False)
-    build_docx(out / "chaoxing_review_answers.docx", "学习通期末复习题答案", questions, include_answers=True)
+    questions = []
+    if args.mode in {"questions", "all"}:
+        for work in parse_homework_list(session, course_id, class_id, cpi):
+            questions.extend(parse_homework_page(session, work, course_id, class_id, cpi))
+        for activity in parse_activity_list(session, args.fid, course_id, class_id):
+            questions.extend(parse_quiz(session, activity))
+        (out / "chaoxing_questions_raw.json").write_text(json.dumps(questions, ensure_ascii=False, indent=2), encoding="utf-8")
+        build_docx(out / "chaoxing_review_questions.docx", "Chaoxing Review Questions", questions, include_answers=False)
+        build_docx(out / "chaoxing_review_answers.docx", "Chaoxing Review Answers", questions, include_answers=True)
+
+    courseware = []
+    if args.mode in {"courseware", "all"}:
+        courseware = download_courseware(session, out, course_id, class_id, cpi)
+        (out / "chaoxing_courseware_manifest.json").write_text(json.dumps(courseware, ensure_ascii=False, indent=2), encoding="utf-8")
+
     report = {
         "course_title": state.get("title"),
         "course_id": course_id,
         "class_id": class_id,
+        "mode": args.mode,
         "total_questions": len(questions),
         "with_answers": sum(1 for item in questions if item.get("answer")),
         "without_answers": sum(1 for item in questions if not item.get("answer")),
-        "outputs": ["chaoxing_questions_raw.json", "chaoxing_review_questions.docx", "chaoxing_review_answers.docx"],
+        "courseware_downloaded": len(courseware),
+        "outputs": [
+            "chaoxing_export_report.json",
+            "chaoxing_questions_raw.json",
+            "chaoxing_review_questions.docx",
+            "chaoxing_review_answers.docx",
+            "chaoxing_courseware_manifest.json",
+            "courseware/",
+        ],
     }
     (out / "chaoxing_export_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -351,4 +477,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

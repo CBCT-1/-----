@@ -1,0 +1,4 @@
+interface:
+  display_name: "Quant Combo Lab"
+  short_description: "Run broad local quant strategy searches and rank results."
+  default_prompt: "Use $quant-combo-lab to run a broad local quant strategy search and summarize the best high-return, low-drawdown models."

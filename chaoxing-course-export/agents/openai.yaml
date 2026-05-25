@@ -1,0 +1,3 @@
+display_name: Chaoxing Course Export
+short_description: Export Chaoxing courseware and review questions.
+default_prompt: Export my authorized Chaoxing course PPTs, homework, and in-class practice into local review files.

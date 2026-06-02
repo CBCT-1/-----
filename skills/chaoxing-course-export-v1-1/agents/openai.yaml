@@ -1,0 +1,3 @@
+display_name: Chaoxing Course Export 1.1
+short_description: Export Chaoxing courseware, homework, and quizzes with updated iframe support.
+default_prompt: Export my authorized Chaoxing course PPTs, homework, and in-class practice into local review files using v1.1.

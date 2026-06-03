@@ -37,7 +37,9 @@ Use these notes when `scripts/chaoxing_export.py` needs adjustment.
    - `standardEnc`
 6. Retry:
    `/mooc-ans/mooc2/work/view?courseId=<courseId>&classId=<classId>&cpi=<cpi>&workId=<workId>&answerId=<answerId>&standardEnc=<standardEnc>&enc=<enc>`
-7. Parse `.questionLi`, `.mark_name`, `.qtDetail li`, `.stuAnswerContent`, `.rightAnswerContent`, and `.qtAnalysis`.
+7. Parse `.questionLi`, `.mark_name`, `.stuAnswerContent`, `.rightAnswerContent`, and `.qtAnalysis`.
+   - Older submitted views may store options in `.qtDetail li`.
+   - Newer do-work views may store options in `.stem_answer .answerBg`; read the option label from `.num_option` (`data` or text) and option content from `.answer_p`.
 8. Normalize question type labels to Chinese. For `判断题`, normalize options and answers to `对`/`错` instead of `1`/`2` or `A`/`B`.
 
 ## In-Class Practice

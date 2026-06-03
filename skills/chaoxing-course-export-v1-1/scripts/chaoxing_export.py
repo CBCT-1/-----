@@ -138,6 +138,35 @@ def format_homework_option(qtype: Any, text: str, index: int) -> str:
     return text
 
 
+def extract_homework_options(question_node, qtype: Any) -> list[str]:
+    options = [format_homework_option(qtype, li.get_text(" ", strip=True), idx) for idx, li in enumerate(question_node.select(".qtDetail li"))]
+    if options:
+        return options
+
+    options = []
+    for idx, node in enumerate(question_node.select(".stem_answer .answerBg")):
+        label_el = node.select_one(".num_option")
+        label = clean_text((label_el.get("data") if label_el else "") or (label_el.get_text(" ", strip=True) if label_el else ""))
+        content_el = node.select_one(".answer_p")
+        content = clean_text(content_el.get_text(" ", strip=True)) if content_el else clean_text(node.get("aria-label") or node.get_text(" ", strip=True))
+        if is_true_false_type(qtype):
+            option = normalize_true_false_value(content or label, idx)
+        elif label and content:
+            option = f"{label}. {content}"
+        else:
+            option = content or label
+        if option:
+            options.append(option)
+
+    deduped = []
+    seen = set()
+    for option in options:
+        if option not in seen:
+            deduped.append(option)
+            seen.add(option)
+    return deduped
+
+
 class CDP:
     def __init__(self, cdp_base: str):
         self.cdp_base = cdp_base.rstrip("/")
@@ -292,7 +321,7 @@ def parse_homework_page(session: requests.Session, work: dict[str, str], course_
             "num": num,
             "type": qtype,
             "stem": stem,
-            "options": [format_homework_option(qtype, li.get_text(" ", strip=True), idx) for idx, li in enumerate(q.select(".qtDetail li"))],
+            "options": extract_homework_options(q, qtype),
             "student_answer": student_answer,
             "answer": answer,
             "analysis": clean_text(q.select_one(".qtAnalysis").get_text(" ", strip=True)) if q.select_one(".qtAnalysis") else "",

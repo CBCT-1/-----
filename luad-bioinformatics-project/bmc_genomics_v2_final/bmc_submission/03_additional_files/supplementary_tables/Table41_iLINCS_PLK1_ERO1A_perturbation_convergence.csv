@@ -1,0 +1,13 @@
+﻿evidence_layer,comparison,cellline,n_common_genes,effect,concordant_top_gene_count,opposite_top_gene_count,boundary
+targeted_signature_similarity,A549 PLK1 knockdown vs A549 ERO1A knockdown,A549,978,0.052870360714193425,10.0,4.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,A549 PLK1 knockdown vs HCC515 PLK1 knockdown,cross-cell,978,-0.09485528363564091,6.0,8.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,A549 PLK1 knockdown vs A549 BI-2536 10uM 24h,A549,978,0.14608396408598892,4.0,1.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,A549 ERO1A knockdown vs HCC515 ERO1A knockdown,cross-cell,978,0.27924763273046416,11.0,2.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,A549 ERO1A knockdown vs A549 BI-2536 10uM 24h,A549,978,0.06074463277335515,8.0,3.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,HCC515 PLK1 knockdown vs HCC515 ERO1A knockdown,HCC515,978,0.37929161479617735,14.0,0.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,HCC515 PLK1 knockdown vs HCC515 BI-2536 10uM 24h,HCC515,978,0.23631361671374687,13.0,1.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+targeted_signature_similarity,HCC515 ERO1A knockdown vs HCC515 BI-2536 10uM 24h,HCC515,978,0.22239943857715086,4.0,3.0,"Signature-level convergence; not molecular interaction, epistasis or matched-time perturbation."
+BI2536_dose_similarity,BI-2536 dose vs similarity to ERO1A_KD,A549,978,0.6571428571428573,,,Dose-order effect size across six signatures; not a biological-replicate significance test.
+BI2536_dose_similarity,BI-2536 dose vs similarity to PLK1_KD,A549,978,-0.8857142857142858,,,Dose-order effect size across six signatures; not a biological-replicate significance test.
+BI2536_dose_similarity,BI-2536 dose vs similarity to ERO1A_KD,HCC515,978,0.8857142857142858,,,Dose-order effect size across six signatures; not a biological-replicate significance test.
+BI2536_dose_similarity,BI-2536 dose vs similarity to PLK1_KD,HCC515,978,0.8857142857142858,,,Dose-order effect size across six signatures; not a biological-replicate significance test.

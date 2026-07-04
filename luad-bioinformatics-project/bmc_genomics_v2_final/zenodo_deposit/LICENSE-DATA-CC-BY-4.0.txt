@@ -1,0 +1,9 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0) — TEMPLATE POINTER
+
+The derived source-data tables in this deposit are offered under CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/) PENDING AUTHOR CONFIRMATION.
+
+Note: original datasets (TCGA, GEO, DepMap, iLINCS, HPA, CELLxGENE, BioStudies)
+remain under their own terms; only the derived, aggregated tables produced by this
+project are licensed here. Confirm compatibility with each source's terms before
+final deposit.

@@ -1,0 +1,7 @@
+cohort,n,events,c_index,fully_independent,n_genes_used,HR_per_SD
+TCGA_test,173,63,0.649,internal,,
+GSE31210,193,25,0.635,False,12.0,1.505
+GSE50081,127,53,0.631,False,12.0,1.684
+GSE30219,80,41,0.7,True,12.0,1.53
+GSE37745,106,77,0.525,True,12.0,1.033
+GSE68465,214,119,0.608,True,10.0,1.273

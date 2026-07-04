@@ -54,26 +54,29 @@
 
 ---
 
-## 三、部分接受 / 已诚实标注但受环境限制未能完全重做
+## 三、原"留给后续"的三条,本轮也已补做 ✅
 
-### 8. GEO 外部验证信息泄漏(GPT #1)—— 已如实重贴标签,但未重训模型 ◑
-- **接受问题真实存在**:GSE31210/GSE50081 通过 cross-layer support 参与了选基因,不能算完全独立外部验证。
-- **已做**:摘要/正文把"four of five **external** cohorts"改为"four of five **retrospective transfer** cohorts";明确写只有 GSE30219/GSE37745/GSE68465 完全独立;Limitations 和 Future work 都点明。
-- **未做(留给你)**:GPT 的方案 A(只用文献+TCGA 冻结选基因、所有 GEO 才算外部)需要**重新推导整个 9 基因集并重训**,这是更深的重跑,已在 Future work 写明为下一步。当前用诚实措辞守住,不再声称完全独立。
+### 8. GEO 外部验证信息泄漏(GPT #1)—— 已重训无泄漏冻结模型 ✅
+- **已做**:候选池 = **12 个纯 TCGA 全基因组 FDR<0.05 基因(完全不含 GEO)**,TCGA train 拟合多变量 Cox、冻结系数,再把 5 个 GEO 当**真外部**评价。
+- **结果(强)**:leak-free 模型复现了原模型的模式——完全独立的 **GSE30219 C=0.700(HR 1.53)、GSE68465 C=0.608(HR 1.27)** 验证成功;GSE37745 仍 0.525(与之前一致);TCGA test 0.649。
+- **结论**:**外部信号不是特征选择泄漏造成的**。已把这一 rebuttal 写进正文 Results,并在 Limitations 注明。新表 `frozen_model_external_validation.csv`、`frozen_model_coefficients.csv`。
 
-### 9. 自写 Cox 可重复性 / R survival 重算(GPT #2)◑
-- **部分接受**。lifelines 在本环境编译失败,未能用成熟软件平行复算。
-- **已做**:train/test 用固定 split 与随机种子(seed 20260610,70/30 分层)、报告 train/test 事件数、bootstrap CI。
-- **未做**:R survival/scikit-survival 逐病例交叉核验、Schoenfeld 比例风险检验 —— 留给你在本地补(建议采纳)。
+### 9. 自写 Cox 可重复性(GPT #2)—— 已用 scikit-survival 核验 ✅
+- **已做**:装上 scikit-survival,把我的手写 Cox/concordance 与之比对。
+- **结果**:**完全一致**(train 0.6656 vs 0.6656;test 0.6494 vs 0.6496,三位小数一致)。已写进 Methods。新表 `cox_implementation_crosscheck.csv`。
+- 未做:Schoenfeld 比例风险检验仍建议你本地用 R survival 补(lifelines 本环境编译失败)。
 
-### 10. TCGA 样本溯源审计(GPT #3)◑
-- **部分**:已报告 n=557 建模(train 388/test 169,事件 144/62)。
-- **未做**:589→576→557 的逐步样本流程图、aliquot 去重、Primary Tumor 筛选说明 —— 需要你补一张 sample-flow 图(建议采纳)。
+### 10. TCGA 样本溯源(GPT #3)—— 已给完整 sample-flow + 稳健性 ✅
+- **已做**:589 行 = **517 患者**(528 primary-tumour、59 normal-tissue、2 metastatic 条码)→ 576 有正随访(211 事件)→ 557 有 stage/age(nomogram 集)。
+- **暴露并处理了真问题**:含 59 个正常组织条码 + 66 个多样本患者。
+- **稳健性**:清洗到 primary-tumour-only + 患者去重(**503 患者**)后 test C=**0.749**(比含噪版更高)→ 结果不由正常条码/重复样本驱动。已写进 Methods。新表 `tcga_sample_flow.csv`。
 
-### 11. 全 SCENIC / IPCW timeROC / 前瞻验证 —— 环境或数据不允许 ✗
-- 无 GPU / 无湿实验 / 无前瞻队列,已在文中如实标注为未完成边界(与上一轮一致)。
+### 11. HPA 候选池(GPT #21)—— 已解释 ✅
+- **已做**:HPA 评价的是 **35 基因候选池**(top-survival + pathway 候选的并集,含 9 个 programme 基因 + KIF18A/PFKP/ERO1B 等)。已在正文 Fig3 段注明。
 
----
+### 仍受硬件/数据限制未做(如实标注)
+- 全 pySCENIC(无 GPU)、IPCW time-ROC、前瞻验证、湿实验 —— 文中均标为未完成边界。
+- Schoenfeld PH 检验 —— 建议你本地 R survival 补。
 
 ## 四、关于期刊定位
 
@@ -83,7 +86,7 @@
 
 ## 五、修改后的净变化
 
-- 3 张图(Fig6/7/8)按修正分析重做;主稿、图例、Word 附图、BMC 分文件包全部同步。
+- 3 张图(Fig6/7/8)按修正分析重做 + 无泄漏冻结模型/Cox核验/样本流程三项补做;主稿、图例、Word 附图、BMC 分文件包全部同步。
 - 关键数字更新:单细胞→样本级 FDR<0.05;空间→leave-out 5/5 患者;nomogram→ΔC +0.006(独立但无增量)。
 - 残留过强表述检查 = 0。
 - **本轮把"疑似夸大"的三处(单细胞 P 值、nomogram 0.75、空间 confirmed)全部改为经得起审的诚实版本**——这正是本文"透明证据层级"定位应有的样子。GPT 的审稿实质性提高了稿件质量。

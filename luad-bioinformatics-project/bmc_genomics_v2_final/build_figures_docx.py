@@ -39,6 +39,12 @@ LEG=[
  "showing common essentiality rather than LUAD selectivity (Mann-Whitney P=0.73). (c) Expression-drug associations "
  "(Spearman r versus -log10 FDR) for PLK1 (blue) and ERO1A (orange); none of the 12 tests passes FDR<0.05 (dashed "
  "line), so no PLK-inhibitor stratifier is supported."),
+("Figure6_singlecell","Figure 6. Single-cell (GSE131907, 208,506 cells): the programme is malignant-epithelial-specific.",
+ "(a) Programme-gene expression across annotated cell types (dot size = percent expressing, colour = mean expression). (b) Malignant (tumour-origin) versus normal epithelial differential expression; all nine genes are significantly enriched in malignant cells (each P<1e-20). (c) Programme score peaks in malignant and tumour-transitional epithelial states versus normal epithelium. (d) Programme and PLK1 correlate with proliferation (MKI67) across epithelial cells."),
+("Figure7_spatial_deconv","Figure 7. Reference-based Visium deconvolution using the GSE131907 single-cell reference (22 sections).",
+ "(a) Spearman correlation between programme score and inferred cell-type abundance across ~53,000 spots; the programme co-localises most strongly with the epithelial compartment and negatively with mast/endothelial cells. (b) Per-section programme-versus-epithelial correlation is positive in 22/22 sections (tumour sections darker), mean rho 0.21."),
+("Figure8_nomogram","Figure 8. Clinical utility: a risk-score + clinical nomogram (TCGA-LUAD, n=557).",
+ "(a) Harrell C-index for the gene score alone versus the score-plus-clinical nomogram (all TCGA and held-out test); the nomogram clears 0.70. (b) Time-dependent AUC at 1/3/5 years for the nomogram versus the gene score. (c) Three-year calibration across risk tertiles (predicted versus observed event rate)."),
 ("FigureS1","Additional file 1 (Supplementary Figure S1). iLINCS/L1000 PLK1-ERO1A perturbation convergence.",
  "(a) Signature-level Spearman correlation (978 shared L1000 genes): within-cell PLK1-knockdown vs ERO1A-knockdown "
  "convergence in HCC515 and A549, and cross-cell knockdown reproducibility. (b) Interpretation boundary: convergence "

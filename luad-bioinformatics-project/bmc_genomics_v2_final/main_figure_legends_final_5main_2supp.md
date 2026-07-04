@@ -60,6 +60,32 @@ Interpretation boundary: strong PLK1 dependency is not LUAD-selective, and ERO1A
 
 ---
 
+## Figure 6. Single-cell (GSE131907, 208,506 cells): the programme is malignant-epithelial-specific.
+
+**a,** Programme-gene expression across annotated cell types (dot size = percent expressing; colour = mean expression). **b,** Malignant (tumour-origin) versus normal epithelial differential expression; all nine genes significantly enriched in malignant cells (each P<1e-20). **c,** Programme score peaks in malignant and tumour-transitional epithelial states versus normal epithelium. **d,** Programme and PLK1 correlate with proliferation (MKI67) across epithelial cells.
+
+Source data: sc_celltype_expression.csv, sc_malignant_vs_normal_epi.csv, sc_programme_by_epithelial_subtype.csv.
+
+Interpretation boundary: raw per-cell analysis using the original GSE131907 annotations and a curated gene panel; not a de novo full-transcriptome re-clustering.
+
+## Figure 7. Reference-based Visium deconvolution using the GSE131907 single-cell reference (22 sections).
+
+**a,** Spearman correlation between programme score and inferred cell-type abundance across ~53,000 spots. **b,** Per-section programme-versus-epithelial correlation, positive in 22/22 sections (tumour sections darker).
+
+Source data: spatial_deconv_programme_colocalisation.csv, spatial_deconv_section_consistency.csv.
+
+Interpretation boundary: marker-based non-negative-least-squares deconvolution against a real single-cell reference; not GPU-scale probabilistic deconvolution or pathologist-annotated segmentation.
+
+## Figure 8. Clinical utility: a risk-score + clinical nomogram (TCGA-LUAD, n=557).
+
+**a,** Harrell C-index, gene score alone versus score-plus-clinical nomogram (all TCGA and held-out test). **b,** Time-dependent AUC at 1/3/5 years. **c,** Three-year calibration across risk tertiles.
+
+Source data: nomogram_cindex.csv, nomogram_timeAUC.csv, nomogram_coefficients.csv, nomogram_calibration_3yr.csv.
+
+Interpretation boundary: the gene score alone remains C-index ~0.64; the combined gain derives from adding stage. Apparent (in-sample) calibration; not prospective validation.
+
+---
+
 ## Additional file 1 (Supplementary Figure S1). PLK1 and ERO1A perturbation signatures show cell-context-dependent convergence.
 
 **a,** Pairwise Spearman similarity among PLK1 knockdown, ERO1A knockdown and 10-µM BI-2536 signatures in A549 and HCC515. **b,** Pre-specified comparisons of cross-cell knockdown reproducibility, within-cell PLK1-ERO1A knockdown convergence and 24-hour BI-2536 similarity. **c,** Similarity of six 24-hour BI-2536 dose signatures to PLK1 or ERO1A knockdown in each cell line. **d,** Gene-level PLK1-versus-ERO1A knockdown response in HCC515.

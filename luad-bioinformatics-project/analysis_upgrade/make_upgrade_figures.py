@@ -27,7 +27,7 @@ def gc(g): return ACCENT if g=="PLK1" else ACCENT2 if g=="ERO1A" else "#c8d6e8"
 
 # ================= Figure 6: single-cell =================
 def fig_sc():
-    de=pd.read_csv(P/"sc_malignant_vs_normal_epi.csv"); ct=pd.read_csv(P/"sc_celltype_expression.csv")
+    de=pd.read_csv(P/"sc_malignant_vs_normal_pseudobulk.csv"); ct=pd.read_csv(P/"sc_celltype_expression.csv")
     sub=pd.read_csv(P/"sc_programme_by_epithelial_subtype.csv")
     fig=plt.figure(figsize=(7.4,5.7)); gs=fig.add_gridspec(2,2,height_ratios=[1.15,1],width_ratios=[1.25,1],hspace=0.55,wspace=0.5)
     # (a) DotPlot cell type x programme gene
@@ -50,14 +50,15 @@ def fig_sc():
     plabel(ax,"a",dx=-0.36)
     # (b) malignant vs normal epithelial diff
     ax=fig.add_subplot(gs[0,1]); de=de.set_index("gene").reindex(PROG).reset_index()
+    de["diff"]=de["sample_level_diff"]
     y=np.arange(len(de))[::-1]
     ax.barh(y,de["diff"],color=[gc(g) for g in de.gene],height=0.7,zorder=3,edgecolor=SURF,linewidth=0.5)
     ax.set_yticks(y); ax.set_yticklabels(de.gene,fontsize=6.8)
     for lbl,g in zip(ax.get_yticklabels(),de.gene):
         if g in("PLK1","ERO1A"): lbl.set_fontweight("bold"); lbl.set_color(INK)
-    ax.set_xlabel("malignant − normal epithelial\nΔ mean expr"); ax.set_title("Malignant-cell enrichment")
+    ax.set_xlabel("tumour − normal-lung sample\nΔ mean expr (pseudobulk)"); ax.set_title("Malignant-epithelial enrichment")
     hgrid(ax); tidy(ax)
-    ax.text(0.97,0.03,"all 9 genes P<1e-20",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.2,color=GOOD,style="italic")
+    ax.text(0.97,0.03,"9/9 genes FDR<0.05\n(36 vs 11 samples)",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.0,color=GOOD,style="italic")
     plabel(ax,"b",dx=-0.30)
     # (c) programme by epithelial subtype
     ax=fig.add_subplot(gs[1,0]); sub=sub.rename(columns={sub.columns[0]:"subtype"})
@@ -78,13 +79,13 @@ def fig_sc():
     ax.set_ylabel("Spearman ρ (epithelial cells)"); ax.set_title("Linked to proliferation"); vgrid(ax); tidy(ax)
     ax.text(0.97,0.96,"all P≈0",transform=ax.transAxes,ha="right",va="top",fontsize=6.2,color=INK2,style="italic")
     plabel(ax,"d",dx=-0.30)
-    fig.suptitle("Figure 6  Single-cell (GSE131907, 208,506 cells): the programme is malignant-epithelial-specific",
+    fig.suptitle("Figure 6  Single-cell (GSE131907, 208,506 cells): the programme is enriched in malignant epithelial cells",
                  x=0.012,ha="left",fontsize=9.0,fontweight="bold",y=0.99)
     save(fig,"Figure6_singlecell")
 
 # ================= Figure 7: spatial deconvolution =================
 def fig_deconv():
-    co=pd.read_csv(P/"spatial_deconv_programme_colocalisation.csv"); sec=pd.read_csv(P/"spatial_deconv_section_consistency.csv")
+    co=pd.read_csv(P/"spatial_deconv_programme_colocalisation.csv"); sec=pd.read_csv(P/"spatial_deconv_leaveout_section.csv").rename(columns={"rho_leaveout":"rho_programme_vs_epithelial"})
     fig=plt.figure(figsize=(7.2,3.1)); gs=fig.add_gridspec(1,2,width_ratios=[1.1,1.05],wspace=0.5)
     ax=fig.add_subplot(gs[0,0]); co=co.sort_values("spearman_rho")
     cols=[ACCENT if "Epithel" in c else (AQUA if r>0 else CRIT) for c,r in zip(co.cell_type,co.spearman_rho)]
@@ -98,49 +99,50 @@ def fig_deconv():
     cols=[ACCENT if t else "#9ec5f4" for t in sec.is_tumor]
     ax.barh(np.arange(len(sec)),sec.rho_programme_vs_epithelial,color=cols,height=0.8,zorder=3,edgecolor=SURF,linewidth=0.4); ax.axvline(0,color=AXIS,lw=0.9)
     ax.set_yticks([]); ax.set_xlabel("per-section ρ (programme vs epithelial)")
-    ax.set_title("Positive in 22/22 sections"); hgrid(ax); tidy(ax)
+    ax.set_title("Leave-programme-out: 21/22 sections, 5/5 patients"); hgrid(ax); tidy(ax)
     ax.legend(handles=[Rectangle((0,0),1,1,color=ACCENT),Rectangle((0,0),1,1,color="#9ec5f4")],labels=["tumour section","adjacent section"],
               loc="upper left",fontsize=6.4,handlelength=1,handleheight=1)
-    ax.text(0.97,0.05,f"mean ρ={sec.rho_programme_vs_epithelial.mean():.2f}",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.4,color=INK2)
+    ax.text(0.97,0.05,f"median ρ={sec.rho_programme_vs_epithelial.median():.2f}\n5/5 patients positive",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.2,color=INK2)
     plabel(ax,"b",dx=-0.06)
-    fig.suptitle("Figure 7  Reference-based Visium deconvolution (real GSE131907 single-cell reference, 22 sections)",
+    fig.suptitle("Figure 7  Reference-based Visium deconvolution (22 sections from 5 patients; programme genes excluded from signature)",
                  x=0.012,ha="left",fontsize=9.0,fontweight="bold",y=1.03)
     save(fig,"Figure7_spatial_deconv")
 
 # ================= Figure 8: nomogram =================
 def fig_nomo():
-    ci=pd.read_csv(P/"nomogram_cindex.csv"); ta=pd.read_csv(P/"nomogram_timeAUC.csv"); cal=pd.read_csv(P/"nomogram_calibration_3yr.csv")
-    fig=plt.figure(figsize=(7.4,3.1)); gs=fig.add_gridspec(1,3,width_ratios=[1,1.05,1],wspace=0.55)
-    # (a) C-index
-    ax=fig.add_subplot(gs[0,0]); x=np.arange(2); w=0.36
-    ax.bar(x-w/2,ci.c_index_all,w,color="#9ec5f4",zorder=3,edgecolor=SURF,linewidth=0.7,label="all TCGA")
-    ax.bar(x+w/2,ci.c_index_test,w,color=ACCENT,zorder=3,edgecolor=SURF,linewidth=0.7,label="held-out test")
-    ax.axhline(0.70,color=GOOD,lw=1.0,ls=(0,(4,3))); ax.text(1.4,0.705,"0.70",color=GOOD,fontsize=6,va="bottom",ha="right")
-    for xi,va,vt in zip(x,ci.c_index_all,ci.c_index_test):
-        ax.text(xi-w/2,va+0.006,f"{va:.2f}",ha="center",va="bottom",fontsize=6.4,color=INK2)
-        ax.text(xi+w/2,vt+0.006,f"{vt:.2f}",ha="center",va="bottom",fontsize=6.4,fontweight="bold",color=INK)
-    ax.set_xticks(x); ax.set_xticklabels(["gene\nscore","+clinical\nnomogram"],fontsize=6.8); ax.set_ylim(0.5,0.80); ax.set_ylabel("Harrell C-index")
-    ax.set_title("Nomogram lifts C-index"); vgrid(ax); tidy(ax); ax.legend(loc="upper left",fontsize=6)
-    plabel(ax,"a",dx=-0.34)
-    # (b) time-AUC
-    ax=fig.add_subplot(gs[0,1]); x=np.arange(3)
-    ax.plot(x,ta.nomogram_AUC,"-o",color=ACCENT,lw=2,markersize=6,markeredgecolor=SURF,label="nomogram",zorder=4)
-    ax.plot(x,ta.risk_only_AUC,"-o",color=MUTED,lw=2,markersize=6,markeredgecolor=SURF,label="gene score",zorder=3)
-    for xi,v in zip(x,ta.nomogram_AUC): ax.text(xi,v+0.012,f"{v:.2f}",ha="center",va="bottom",fontsize=6.4,fontweight="bold",color=ACCENT)
-    ax.set_xticks(x); ax.set_xticklabels(ta.horizon,fontsize=7); ax.set_ylim(0.6,0.82); ax.set_ylabel("time-dependent AUC")
-    ax.set_title("Discrimination over time"); vgrid(ax); tidy(ax); ax.legend(loc="lower left",fontsize=6.3)
-    plabel(ax,"b",dx=-0.28)
-    # (c) calibration
+    ci=pd.read_csv(P/"nomogram_proper_cindex.csv"); inc=pd.read_csv(P/"nomogram_incremental.csv"); cal=pd.read_csv(P/"nomogram_calibration_3yr.csv")
+    order=["clinical_only","gene_only","combined"]; lab={"clinical_only":"clinical\n(stage+age+sex)","gene_only":"gene\nscore","combined":"combined"}
+    ci=ci.set_index("model").reindex(order).reset_index()
+    fig=plt.figure(figsize=(7.4,3.1)); gs=fig.add_gridspec(1,3,width_ratios=[1.15,1,1],wspace=0.55)
+    # (a) 3 models test C-index with 95% CI
+    ax=fig.add_subplot(gs[0,0]); x=np.arange(3)
+    cols=[MUTED,"#9ec5f4",ACCENT]
+    ax.bar(x,ci.test_c_index,color=cols,width=0.6,zorder=3,edgecolor=SURF,linewidth=0.8)
+    ax.errorbar(x,ci.test_c_index,yerr=[ci.test_c_index-ci.ci95_low,ci.ci95_high-ci.test_c_index],fmt="none",ecolor=INK2,elinewidth=1.1,capsize=3,zorder=4)
+    for xi,v in zip(x,ci.test_c_index): ax.text(xi,v+0.02,f"{v:.2f}",ha="center",va="bottom",fontsize=7,fontweight="bold",color=INK)
+    ax.axhline(0.5,color=CRIT,lw=0.9,ls=(0,(3,3)))
+    ax.set_xticks(x); ax.set_xticklabels([lab[m] for m in order],fontsize=6.4); ax.set_ylim(0.5,0.85); ax.set_ylabel("held-out test C-index")
+    ax.set_title("Discrimination by model"); vgrid(ax); tidy(ax); plabel(ax,"a",dx=-0.34)
+    # (b) incremental value
+    ax=fig.add_subplot(gs[0,1])
+    d=float(inc.delta_c_combined_minus_clinical[0]); lo=float(inc.ci_low[0]); hi=float(inc.ci_high[0])
+    ax.axhline(0,color=CRIT,lw=1.0,ls=(0,(4,3)))
+    ax.errorbar([0],[d],yerr=[[d-lo],[hi-d]],fmt="o",color=ACCENT,markersize=9,markeredgecolor=SURF,elinewidth=1.6,capsize=5,zorder=4)
+    ax.text(0,hi+0.006,f"ΔC = {d:+.3f}",ha="center",va="bottom",fontsize=8,fontweight="bold",color=INK)
+    ax.set_xlim(-0.6,0.6); ax.set_xticks([]); ax.set_ylim(min(-0.12,lo-0.02),max(0.12,hi+0.04))
+    ax.set_ylabel("ΔC-index (combined − clinical)")
+    ax.set_title("No incremental discrimination"); vgrid(ax); tidy(ax)
+    ax.text(0.5,0.03,f"95% CI crosses 0\nbut LR p={float(inc.LR_p[0]):.0e} (independent)",transform=ax.transAxes,ha="center",va="bottom",fontsize=6.0,color=INK2,style="italic")
+    plabel(ax,"b",dx=-0.34)
+    # (c) calibration (honest: over-prediction)
     ax=fig.add_subplot(gs[0,2])
     ax.plot([0,0.7],[0,0.7],color=MUTED,lw=1,ls=(0,(3,3)),zorder=2)
     ax.plot(cal.mean_predicted_3yr_risk,cal.observed_3yr_event_rate,"-o",color=ACCENT,lw=1.8,markersize=7,markeredgecolor=SURF,zorder=4)
-    for _,r in cal.iterrows(): ax.annotate(r.risk_tertile,(r.mean_predicted_3yr_risk,r.observed_3yr_event_rate),
-        textcoords="offset points",xytext=(6,-7),fontsize=6,color=INK2)
-    ax.set_xlim(0,0.7); ax.set_ylim(0,0.7); ax.set_xlabel("predicted 3-yr event risk"); ax.set_ylabel("observed 3-yr event rate")
-    ax.set_title("Calibration (3-year)"); ax.grid(color=GRID,lw=0.6); ax.set_axisbelow(True); tidy(ax)
-    plabel(ax,"c",dx=-0.32)
-    fig.suptitle("Figure 8  Clinical utility: a risk-score + clinical nomogram (TCGA-LUAD, n=557)",
-                 x=0.012,ha="left",fontsize=9.0,fontweight="bold",y=1.03)
+    for _,r in cal.iterrows(): ax.annotate(r.risk_tertile,(r.mean_predicted_3yr_risk,r.observed_3yr_event_rate),textcoords="offset points",xytext=(6,-7),fontsize=6,color=INK2)
+    ax.set_xlim(0,0.7); ax.set_ylim(0,0.7); ax.set_xlabel("predicted 3-yr risk"); ax.set_ylabel("observed 3-yr rate")
+    ax.set_title("Calibration (over-predicts)"); ax.grid(color=GRID,lw=0.6); ax.set_axisbelow(True); tidy(ax); plabel(ax,"c",dx=-0.34)
+    fig.suptitle("Figure 8  Incremental prognostic assessment: the score is independent but does not improve discrimination over clinical staging (TCGA-LUAD)",
+                 x=0.012,ha="left",fontsize=8.2,fontweight="bold",y=1.03)
     save(fig,"Figure8_nomogram")
 
 fig_sc(); fig_deconv(); fig_nomo(); print("UPGRADE_FIGURES_DONE")

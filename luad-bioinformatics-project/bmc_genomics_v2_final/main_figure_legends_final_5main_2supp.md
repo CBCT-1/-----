@@ -1,10 +1,8 @@
-# Main figure and additional-file legends (BMC Genomics, 5 main + 2 supplementary)
+# Main figure and additional-file legends (BMC Genomics, 8 main + 2 supplementary)
 
-Reconciled from the previous 7-main + 2-Extended-Data set to the consolidated 5-main + 2-supplementary
-scheme used by the final manuscript. Panel merges follow the figure/table triage: previous Figure 2 + Figure 3
-become Figure 2; previous Figure 6 + Figure 7 become Figure 5; previous Extended Data Figures become
-Additional files 1-2 (Supplementary Figures S1-S2). BMC "Additional file" nomenclature is used for
-supplementary items.
+Eight main figures and two supplementary figures (BMC "Additional file" nomenclature). Figures 1-5 cover the
+public-data evidence hierarchy; Figures 6-8 add single-cell resolution, reference-based spatial deconvolution and
+the incremental prognostic assessment. Additional files 1-2 hold the iLINCS and therapeutic-window boundary figures.
 
 ---
 
@@ -60,23 +58,23 @@ Interpretation boundary: strong PLK1 dependency is not LUAD-selective, and ERO1A
 
 ---
 
-## Figure 6. Single-cell (GSE131907, 208,506 cells): the programme is malignant-epithelial-specific.
+## Figure 6. Single-cell (GSE131907, 208,506 cells): the programme is enriched in malignant/tumour-derived epithelium.
 
-**a,** Programme-gene expression across annotated cell types (dot size = percent expressing; colour = mean expression). **b,** Malignant (tumour-origin) versus normal epithelial differential expression; all nine genes significantly enriched in malignant cells (each P<1e-20). **c,** Programme score peaks in malignant and tumour-transitional epithelial states versus normal epithelium. **d,** Programme and PLK1 correlate with proliferation (MKI67) across epithelial cells.
+**a,** Programme-gene expression across annotated cell types (dot size = percent expressing; colour = mean expression). **b,** Sample-level pseudobulk differential expression (36 tumour-origin versus 11 normal-lung samples), avoiding cell-level pseudoreplication; all nine genes enriched at FDR<0.05. **c,** Programme score peaks in malignant and tumour-transitional epithelial states versus normal epithelium. **d,** Programme and PLK1 correlate with proliferation (MKI67) across epithelial cells.
 
 Source data: sc_celltype_expression.csv, sc_malignant_vs_normal_epi.csv, sc_programme_by_epithelial_subtype.csv.
 
-Interpretation boundary: raw per-cell analysis using the original GSE131907 annotations and a curated gene panel; not a de novo full-transcriptome re-clustering.
+Interpretation boundary: enrichment is compartment-biased rather than strictly specific (C1QTNF6/STEAP1 peak in fibroblasts); statistics are at the sample level; cell-type/malignant labels are from the original inferCNV-based annotation, not de novo re-clustering.
 
-## Figure 7. Reference-based Visium deconvolution using the GSE131907 single-cell reference (22 sections).
+## Figure 7. Reference-based Visium deconvolution (programme genes excluded from the signature; 22 sections from five patients).
 
-**a,** Spearman correlation between programme score and inferred cell-type abundance across ~53,000 spots. **b,** Per-section programme-versus-epithelial correlation, positive in 22/22 sections (tumour sections darker).
+**a,** Spearman correlation between programme score and inferred cell-type abundance (co-localisation ranking). **b,** Per-section programme-versus-epithelial correlation with programme genes excluded from the signature, positive in 21/22 sections and 5/5 patients (tumour sections darker).
 
 Source data: spatial_deconv_programme_colocalisation.csv, spatial_deconv_section_consistency.csv.
 
-Interpretation boundary: marker-based non-negative-least-squares deconvolution against a real single-cell reference; not GPU-scale probabilistic deconvolution or pathologist-annotated segmentation.
+Interpretation boundary: leave-programme-out marker-based NNLS deconvolution; only five patients, so the patient-level test is under-powered (Wilcoxon p=0.06); not a probabilistic method or pathologist-annotated segmentation. Spot-level pooling is avoided because adjacent spots are autocorrelated.
 
-## Figure 8. Clinical utility: a risk-score + clinical nomogram (TCGA-LUAD, n=557).
+## Figure 8. Incremental prognostic assessment (TCGA-LUAD; train-fit, test-evaluated).
 
 **a,** Harrell C-index, gene score alone versus score-plus-clinical nomogram (all TCGA and held-out test). **b,** Time-dependent AUC at 1/3/5 years. **c,** Three-year calibration across risk tertiles.
 

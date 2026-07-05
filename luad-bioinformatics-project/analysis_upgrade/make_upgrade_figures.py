@@ -27,7 +27,7 @@ def gc(g): return ACCENT if g=="PLK1" else ACCENT2 if g=="ERO1A" else "#c8d6e8"
 
 # ================= Figure 6: single-cell =================
 def fig_sc():
-    de=pd.read_csv(P/"sc_malignant_vs_normal_pseudobulk.csv"); ct=pd.read_csv(P/"sc_celltype_expression.csv")
+    de=pd.read_csv(P/"sc_paired_patient_tumour_vs_normal.csv"); ct=pd.read_csv(P/"sc_celltype_expression.csv")
     sub=pd.read_csv(P/"sc_programme_by_epithelial_subtype.csv")
     fig=plt.figure(figsize=(7.4,5.7)); gs=fig.add_gridspec(2,2,height_ratios=[1.15,1],width_ratios=[1.25,1],hspace=0.55,wspace=0.5)
     # (a) DotPlot cell type x programme gene
@@ -50,15 +50,15 @@ def fig_sc():
     plabel(ax,"a",dx=-0.36)
     # (b) malignant vs normal epithelial diff
     ax=fig.add_subplot(gs[0,1]); de=de.set_index("gene").reindex(PROG).reset_index()
-    de["diff"]=de["sample_level_diff"]
+    de["diff"]=de["paired_diff"]; de["sig"]=de["fdr"]<0.05
     y=np.arange(len(de))[::-1]
     ax.barh(y,de["diff"],color=[gc(g) for g in de.gene],height=0.7,zorder=3,edgecolor=SURF,linewidth=0.5)
     ax.set_yticks(y); ax.set_yticklabels(de.gene,fontsize=6.8)
     for lbl,g in zip(ax.get_yticklabels(),de.gene):
         if g in("PLK1","ERO1A"): lbl.set_fontweight("bold"); lbl.set_color(INK)
-    ax.set_xlabel("tumour − normal-lung sample\nΔ mean expr (pseudobulk)"); ax.set_title("Malignant-epithelial enrichment")
+    ax.set_xlabel("tumour − normal epithelium\nΔ mean (10 paired patients)"); ax.set_title("Patient-paired enrichment")
     hgrid(ax); tidy(ax)
-    ax.text(0.97,0.03,"9/9 genes FDR<0.05\n(36 vs 11 samples)",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.0,color=GOOD,style="italic")
+    ax.text(0.97,0.03,"7/9 genes FDR<0.05\n(paired Wilcoxon)",transform=ax.transAxes,ha="right",va="bottom",fontsize=6.0,color=GOOD,style="italic")
     plabel(ax,"b",dx=-0.30)
     # (c) programme by epithelial subtype
     ax=fig.add_subplot(gs[1,0]); sub=sub.rename(columns={sub.columns[0]:"subtype"})
@@ -77,9 +77,9 @@ def fig_sc():
     for xi,b in zip(x,bars): ax.text(xi,b[1]+0.008,f"{b[1]:.2f}",ha="center",va="bottom",fontsize=7.6,fontweight="bold",color=INK)
     ax.set_xticks(x); ax.set_xticklabels([b[0] for b in bars],fontsize=6.8); ax.set_ylim(0,0.55)
     ax.set_ylabel("Spearman ρ (epithelial cells)"); ax.set_title("Linked to proliferation"); vgrid(ax); tidy(ax)
-    ax.text(0.97,0.96,"all P≈0",transform=ax.transAxes,ha="right",va="top",fontsize=6.2,color=INK2,style="italic")
+    ax.text(0.97,0.96,"cell-level (descriptive)",transform=ax.transAxes,ha="right",va="top",fontsize=6.0,color=INK2,style="italic")
     plabel(ax,"d",dx=-0.30)
-    fig.suptitle("Figure 6  Single-cell (GSE131907, 208,506 cells): the programme is enriched in malignant epithelial cells",
+    fig.suptitle("Figure 6  Single-cell (GSE131907): patient-level enrichment of the signature in malignant/tumour-derived epithelium",
                  x=0.012,ha="left",fontsize=9.0,fontweight="bold",y=0.99)
     save(fig,"Figure6_singlecell")
 

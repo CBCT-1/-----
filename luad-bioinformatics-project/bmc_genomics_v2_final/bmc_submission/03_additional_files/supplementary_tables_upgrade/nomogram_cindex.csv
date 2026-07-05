@@ -1,0 +1,3 @@
+model,c_index_all,c_index_test
+risk_only,0.6548750581031912,0.6380584481021162
+risk+clinical_nomogram,0.7143566974947507,0.7470607994625462

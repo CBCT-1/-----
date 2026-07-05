@@ -1,0 +1,7 @@
+# Extracted source archives (available as GitHub releases; too large for git)
+source/
+v1.1_extracted/
+v1.1_staging/
+analysis_upgrade/data/
+analysis_upgrade/processed/*.csv.gz
+analysis_upgrade/*.tsv

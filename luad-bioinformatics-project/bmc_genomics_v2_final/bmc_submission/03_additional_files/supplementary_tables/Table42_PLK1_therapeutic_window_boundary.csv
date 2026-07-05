@@ -1,0 +1,12 @@
+evidence_layer,comparison,n_luad,n_comparator,effect,p_value,coverage_or_result,boundary
+CRISPR_dependency,LUAD_vs_non_cancer_all,53.0,16,-0.24056603773584906,0.14897986300154115,dependency fractions 1.000 vs 1.000,Non-cancerous immortalized/transformed models are not normal tissue.
+CRISPR_dependency,LUAD_vs_non_cancer_clone_collapsed,53.0,12,-0.1572327044025157,0.4026252422331532,dependency fractions 1.000 vs 1.000,Non-cancerous immortalized/transformed models are not normal tissue.
+normal_lung_coverage,non_cancerous_lung_metadata_vs_functional_coverage,,6,,,0 CRISPR; 0 drug-screen,No screened non-cancerous lung functional model; normal-lung safety untested.
+PLK_inhibitor_AUC,GDSC1 BI-2536,12.0,3,-0.1482459525483547,0.346416451844195,LUAD-minus-non-cancer mean AUC -0.148; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+PLK_inhibitor_AUC,GDSC1 PLK_6522,59.0,6,0.06677201196362104,0.39230594894264903,LUAD-minus-non-cancer mean AUC 0.067; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+PLK_inhibitor_AUC,GDSC2 BI-2536,60.0,5,0.2030674606337981,0.009123126124712588,LUAD-minus-non-cancer mean AUC 0.203; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+PLK_inhibitor_AUC,CTRP BI-2536,55.0,9,-0.2098239132972749,0.001259135466992403,LUAD-minus-non-cancer mean AUC -0.210; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+PLK_inhibitor_AUC,PRISM BI-2536,45.0,1,-0.1378218292638269,0.34782608695652173,LUAD-minus-non-cancer mean AUC -0.138; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+PLK_inhibitor_AUC,PRISM VOLASERTIB,51.0,3,-0.08834603518024675,0.10861151427189164,LUAD-minus-non-cancer mean AUC -0.088; normal-lung n=0,Small heterogeneous non-cancer groups; screens are not pooled.
+expression_context,LUAD_vs_non_cancer_lung_PLK1,83.0,6,0.2556787606425708,0.8419335270495835,mean log2(TPM+1) 6.062 vs 5.807,Expression context only; not functional safety or therapeutic-window evidence.
+expression_context,LUAD_vs_non_cancer_lung_ERO1A,83.0,6,0.16368999036144682,0.7075105247228588,mean log2(TPM+1) 6.774 vs 6.611,Expression context only; not functional safety or therapeutic-window evidence.

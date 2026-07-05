@@ -1,0 +1,17 @@
+﻿evidence_layer,comparison_or_compound,expression_gene,n_models,effect_or_correlation,p_value,fdr,interpretation_boundary
+PLK1_lineage_selectivity,LUAD_vs_other_lung,,53/73,0.0276557249935383,0.7933846984463869,,Gene-effect selectivity test; not a therapeutic-window or normal-tissue toxicity assessment.
+PLK1_lineage_selectivity,LUAD_vs_non_lung,,53/1082,-0.02807519268998715,0.7298811809825891,,Gene-effect selectivity test; not a therapeutic-window or normal-tissue toxicity assessment.
+expression_dependency,PLK1 dependency strength,ERO1A,54,0.040406350724561724,0.7717430984522795,0.7717430984522795,Cell-line expression association; not evidence of molecular interaction or causality.
+expression_dependency,PLK1 dependency strength,PLK1,54,-0.05008862721893783,0.719080374031756,0.7717430984522795,Cell-line expression association; not evidence of molecular interaction or causality.
+CTRP_expression_drug,BI-2536,ERO1A,36,-0.29884169884169887,0.07664738734026788,0.16630688682916359,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC1_expression_drug,BI-2536,ERO1A,9,0.18333333333333335,0.6368198117628943,0.7061630786823548,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC2_expression_drug,BI-2536,ERO1A,38,-0.34666520815689916,0.03298900816790761,0.13195603267163045,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+PRISM_expression_drug,BI-2536,ERO1A,34,-0.2595874713521772,0.13818723902676197,0.20728085854014294,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC1_expression_drug,PLK_6522,ERO1A,37,-0.41858811050948674,0.009926124531006284,0.11911349437207541,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+PRISM_expression_drug,VOLASERTIB,ERO1A,39,-0.2809716599190284,0.08315344341458179,0.16630688682916359,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+CTRP_expression_drug,BI-2536,PLK1,36,0.3562419562419563,0.03296268380241298,0.13195603267163045,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC1_expression_drug,BI-2536,PLK1,9,0.06666666666666667,0.8646897846262037,0.8646897846262037,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC2_expression_drug,BI-2536,PLK1,38,0.2502598898531655,0.12967066406366937,0.20728085854014294,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+PRISM_expression_drug,BI-2536,PLK1,34,0.3381207028265852,0.050481868277045636,0.1514456048311369,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+GDSC1_expression_drug,PLK_6522,PLK1,37,0.07776658184486641,0.6473161554588253,0.7061630786823548,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."
+PRISM_expression_drug,VOLASERTIB,PLK1,39,0.1020242914979757,0.5365569793329477,0.7061630786823548,"Association with 1-AUC in LUAD cell lines; not patient response, synergy, or on-target proof."

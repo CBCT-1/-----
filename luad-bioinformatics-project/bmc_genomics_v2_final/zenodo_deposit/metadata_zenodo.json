@@ -1,0 +1,15 @@
+{
+  "title": "A literature-guided public-data evidence hierarchy prioritises a PLK1-centred mitotic/redox programme in lung adenocarcinoma: code and source data",
+  "upload_type": "dataset",
+  "description": "Analysis code and machine-readable source-data tables reproducing all figures of the manuscript. LUAD public-data evidence hierarchy (TCGA, GEO x5, E-MTAB-13530 Visium, DepMap, iLINCS, HPA, CELLxGENE).",
+  "creators": [
+    {"name": "TODO_AUTHOR_LASTNAME, TODO_FIRSTNAME", "affiliation": "TODO_AFFILIATION", "orcid": "TODO_ORCID"}
+  ],
+  "keywords": ["lung adenocarcinoma","PLK1","ERO1A","transcriptomics","TCGA","GEO","DepMap","public bioinformatics","evidence hierarchy"],
+  "license": "TODO_CHOOSE (e.g. cc-by-4.0)",
+  "access_right": "open",
+  "related_identifiers": [
+    {"relation": "isSupplementTo", "identifier": "TODO_MANUSCRIPT_DOI_OR_JOURNAL_ID", "resource_type": "publication-article"}
+  ],
+  "notes": "Public de-identified datasets only; original data-generating studies retain their own accessions and approvals. Replace all TODO_ fields before minting the DOI."
+}

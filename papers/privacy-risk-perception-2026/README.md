@@ -1,8 +1,20 @@
 # 大学生隐私风险感知与隐私披露行为（2026）
 
 - `Huang-et-al-2026-fpsyg-1891374.pdf` — 英文原文 PDF
-- `中文译本.md` — 全文中译（正文，不含参考文献列表），四张插图已按原位插入
+- `中文译本.pdf` — **排版好的中文全译本（16 页，A4，插图内嵌）**，日常阅读用这个
+- `中文译本.html` — 同一份内容的单文件网页版（图片已 base64 内嵌，可离线打开）
+- `中文译本.md` — Markdown 源文，便于二次编辑
 - `figs/` — 图 1–4 的中文重绘版（PNG + SVG）及生成脚本 `redraw_figures.py`
+- `build_pdf.py` / `topdf.py` — 由 Markdown 生成 HTML 再输出 PDF 的构建脚本
+
+## 重新生成 PDF
+
+```
+python3 build_pdf.py   # Markdown -> 带样式的自包含 HTML
+python3 topdf.py       # HTML -> PDF（A4，含页码）
+```
+
+依赖：`mistune`、`playwright`，以及 `fonts-noto-cjk` / `fonts-noto-cjk-extra` 字体。
 
 ## 出处
 

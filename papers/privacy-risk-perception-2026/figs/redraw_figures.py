@@ -2,7 +2,7 @@
 """Redraw the four figures of Huang et al. (2026) with Chinese labels.
 Source: Front. Psychol. 17:1891374, CC BY 4.0 — adaptation permitted with attribution."""
 import os
-F = 'WenQuanYi Zen Hei, Noto Sans CJK SC, Microsoft YaHei, sans-serif'
+F = 'Noto Sans CJK SC, WenQuanYi Zen Hei, sans-serif'
 os.makedirs('figs', exist_ok=True)
 
 HEAD = '''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{F}">

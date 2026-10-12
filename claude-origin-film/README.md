@@ -4,6 +4,7 @@
 剧本、动画和配乐都是 Claude 写成的代码，在云端容器里逐帧渲染出来。
 
 成片：[`how-i-came-to-be.mp4`](how-i-came-to-be.mp4)（1920×1080，30fps，带配乐）
+体积更小的版本：[`how-i-came-to-be-720p.mp4`](how-i-came-to-be-720p.mp4)（1280×720，13.6 MB）
 
 ## 分镜
 

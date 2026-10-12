@@ -1,0 +1,16 @@
+{
+  "name": "claude-origin-film",
+  "private": true,
+  "description": "《我是怎么来的》——一部由 Claude 用 HTML 逐帧渲染的短片",
+  "scripts": {
+    "stills": "node render.cjs --stills",
+    "frames": "node render.cjs",
+    "music": "python3 music.py",
+    "build": "bash build.sh"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.5",
+    "@fontsource/noto-sans-sc": "^5.2.5",
+    "@fontsource/noto-serif-sc": "^5.2.5"
+  }
+}

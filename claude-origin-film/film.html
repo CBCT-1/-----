@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我是怎么来的</title>
+<script>
+  // ?render=1 时用本地字体（逐帧渲染）；直接在浏览器打开时用 Google Fonts。
+  window.RENDER = new URLSearchParams(location.search).has('render');
+  document.write('<link rel="stylesheet" href="' + (RENDER ? 'fonts.local.css'
+    : 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap') + '">');
+</script>
+<style>
+:root{
+  --bg:#0d0c0b; --ink:#f3ede2; --dim:#a9a194; --faint:#7a7368;
+  --accent:#e58d5c; --gold:#ecc583; --blue:#8bb8d0;
+  --paper:#efe7d8; --paperInk:#2b241f;
+}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;flex:none;width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans SC",sans-serif;-webkit-font-smoothing:antialiased;transform-origin:50% 50%}
+#bg{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#dom{position:absolute;inset:0}
+#vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 78% 72% at 50% 50%,rgba(0,0,0,0) 58%,rgba(0,0,0,.5) 100%)}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.035}
+.scene{position:absolute;inset:0;display:none}
+.abs{position:absolute;white-space:nowrap;opacity:0;visibility:hidden}
+.pre{opacity:0;visibility:hidden}
+.center{left:0;width:1920px;text-align:center}
+.serif{font-family:"Noto Serif SC",serif}
+.mono{font-family:"JetBrains Mono","Noto Sans SC",monospace}
+.acc{color:var(--accent)} .gold{color:var(--gold)} .dim{color:var(--dim)} .faint{color:var(--faint)}
+.ch{display:inline-block;opacity:0;visibility:hidden}
+
+.hero{font-family:"Noto Serif SC",serif;font-size:150px;font-weight:900;letter-spacing:.06em;line-height:1.2}
+.h1{font-size:84px;font-weight:900;line-height:1.25;letter-spacing:.02em}
+.h2{font-size:58px;font-weight:700;line-height:1.3}
+.h2big{font-size:66px;font-weight:700;line-height:1.3}
+.body{font-size:48px;font-weight:400;line-height:1.3}
+.body2{font-size:42px;font-weight:300;line-height:1.3}
+.quote{font-size:52px;font-weight:700;line-height:1.3}
+.label{font-size:24px;letter-spacing:.22em;line-height:1.3}
+.sub{font-size:26px;letter-spacing:.55em;color:var(--accent)}
+.byline{font-size:30px;font-weight:300;letter-spacing:.12em;color:var(--dim)}
+.term{font-family:"JetBrains Mono","Noto Sans SC",monospace;font-size:62px;line-height:1.2;letter-spacing:.02em}
+.cursor{display:inline-block;width:.5em;height:1em;background:var(--accent);vertical-align:-.13em;margin-left:.12em;border-radius:3px}
+.rule{height:2px;background:linear-gradient(90deg,rgba(229,141,92,0),var(--accent) 30%,var(--gold) 70%,rgba(236,197,131,0));transform-origin:50% 50%}
+.yearbg{font-size:380px;font-weight:900;line-height:1;color:transparent;-webkit-text-stroke:2px rgba(243,237,226,.12);letter-spacing:.02em}
+
+/* 预测下一个词 */
+.poem{font-size:92px;font-weight:400;letter-spacing:.1em;line-height:normal}
+.poem2{font-size:72px;font-weight:400;letter-spacing:.1em}
+.slot{display:inline-block;position:relative;width:1em;letter-spacing:0;margin-right:.1em;text-align:center}
+.slotbox{position:absolute;left:.04em;right:.04em;top:.2em;bottom:.12em;border:3px dashed var(--accent);border-radius:12px}
+.slotch{color:var(--accent)}
+.flych{letter-spacing:0;line-height:normal;color:var(--accent);transform-origin:50% 50%;text-align:center}
+.cand{white-space:normal}
+.cnote{font-size:22px;color:var(--faint);margin:0 0 12px 24px;letter-spacing:.12em}
+.crow{display:flex;align-items:center;height:72px;padding:0 24px;border-radius:16px}
+.crow.hot{background:rgba(229,141,92,.13)}
+.crow.hot .cch{color:var(--accent)}
+.cch{font-size:52px;width:70px;text-align:center}
+.cbar{display:inline-block;width:440px;height:12px;margin:0 28px;background:rgba(243,237,226,.08);border-radius:6px;overflow:hidden}
+.cbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--gold));transform-origin:0 50%;transform:scaleX(0)}
+.cval{font-size:26px;color:var(--dim);width:90px;text-align:right}
+
+/* RLHF */
+.bubble{display:inline-block;font-size:38px;padding:22px 40px;border-radius:40px;background:rgba(243,237,226,.08);border:1px solid rgba(243,237,226,.14)}
+.who{font-size:20px;color:var(--dim);letter-spacing:.2em;margin-right:22px;vertical-align:4px}
+.card{width:620px;height:250px;box-sizing:border-box;padding:34px 40px;border-radius:24px;white-space:normal;
+  background:rgba(243,237,226,.05);border:2px solid rgba(243,237,226,.13)}
+.card.win{border-color:var(--accent);background:rgba(229,141,92,.07);box-shadow:0 0 0 1px var(--accent),0 0 70px rgba(229,141,92,.22)}
+.clab{font-size:22px;color:var(--dim);letter-spacing:.15em;margin-bottom:16px}
+.ctext{font-size:36px;line-height:1.55}
+.badge{position:absolute;right:-20px;top:-24px;background:var(--accent);color:#1a1310;font-weight:700;font-size:28px;
+  padding:8px 22px;border-radius:30px;transform:scale(0)}
+.ripple{width:0;height:0;border-radius:50%;border:3px solid var(--accent)}
+
+/* 宪法 */
+.paper{width:600px;box-sizing:border-box;padding:54px 60px 30px;border-radius:20px;white-space:normal;
+  background:var(--paper);color:var(--paperInk);box-shadow:0 50px 90px rgba(0,0,0,.5);transform-origin:50% 50%}
+.ph{font-size:38px;font-weight:700;padding-bottom:22px;margin-bottom:28px;border-bottom:2px solid rgba(43,36,31,.16);letter-spacing:.08em}
+.kw{margin:0 0 30px}
+.kw-w{font-size:58px;font-weight:900;position:relative;display:inline-block;line-height:1.25}
+.kw-w i{position:absolute;left:0;bottom:2px;height:7px;width:100%;background:var(--accent);opacity:.75;transform-origin:0 50%;transform:scaleX(0);border-radius:4px}
+.kw-d{font-size:28px;color:#6b5f55;margin-top:6px}
+
+/* 安全 */
+.cbox{display:inline-block;width:38px;height:38px;box-sizing:border-box;border:2px solid rgba(243,237,226,.38);border-radius:9px;margin-right:24px;vertical-align:-4px}
+.cbox.on{background:var(--accent);border-color:var(--accent)}
+.cbox svg{display:block;width:100%;height:100%}
+.cbox path{fill:none;stroke:#1a1310;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:30;stroke-dashoffset:30}
+
+/* 时间线 */
+.track{position:absolute;left:0;top:0;width:4000px;height:1080px;transform-origin:0 600px}
+.axis{position:absolute;left:120px;top:599px;height:2px;width:0;background:linear-gradient(90deg,rgba(243,237,226,0),rgba(243,237,226,.45) 160px)}
+.axis.fut{left:0;background:repeating-linear-gradient(90deg,rgba(236,197,131,.55) 0 14px,rgba(0,0,0,0) 14px 26px);
+  -webkit-mask-image:linear-gradient(90deg,#000 30%,transparent);mask-image:linear-gradient(90deg,#000 30%,transparent)}
+.tdot{width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;box-sizing:border-box;background:var(--bg);border:3px solid var(--gold)}
+.tdot.now{width:32px;height:32px;margin:-16px 0 0 -16px;background:var(--accent);border-color:#ffd9bf}
+.tstem{width:2px;margin-left:-1px;background:rgba(236,197,131,.45)}
+.tcard{width:420px;text-align:center;white-space:normal}
+.td{font-size:26px;color:var(--accent);letter-spacing:.08em;margin-bottom:8px}
+.tn{font-size:40px;font-weight:700;line-height:1.25;margin-bottom:10px}
+.ts{font-size:26px;font-weight:300;color:var(--dim);line-height:1.5}
+.tnote{font-size:21px;color:var(--faint);margin-top:10px;line-height:1.5}
+.tcard.now .tn{color:var(--gold)}
+.tcard.now .ts{color:var(--ink)}
+
+#play{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+  background:rgba(0,0,0,.55);color:#f3ede2;font:500 22px "Noto Sans SC",sans-serif;cursor:pointer;z-index:9}
+#play b{display:flex;align-items:center;justify-content:center;width:96px;height:96px;border-radius:50%;background:#e58d5c;color:#1a1310;font-size:38px;padding-left:6px;box-sizing:border-box}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <div id="dom"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+</div></div>
+<div id="play" style="display:none"><b>▶</b><span>播放《我是怎么来的》</span></div>
+<script>
+(() => {
+'use strict';
+const W = 1920, H = 1080, DURATION = 153;
+const stage = document.getElementById('stage');
+const dom = document.getElementById('dom');
+const ctx = document.getElementById('bg').getContext('2d');
+
+/* ---------- 工具函数 ---------- */
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, s, d) => clamp((t - s) / d);
+const smooth = (a, b, x) => { const p = clamp((x - a) / (b - a)); return p * p * (3 - 2 * p); };
+const ease = {
+  out: p => 1 - Math.pow(1 - p, 3),
+  inOut: p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  back: p => { const c1 = 1.70158, c3 = c1 + 1; return p <= 0 ? 0 : 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); },
+};
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const blink = t => (t % 1.0) < 0.55;
+
+const CUES = [];
+const cue = (type, t, extra) => CUES.push(Object.assign({ type, t: +t.toFixed(3) }, extra || {}));
+let ALLTEXT = '';
+
+function div(parent, cls, html, css) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  if (html != null) d.innerHTML = html;
+  if (css) Object.assign(d.style, css);
+  parent.appendChild(d);
+  return d;
+}
+const cline = (p, y, html, cls) => div(p, 'abs center ' + (cls || ''), html, { top: y + 'px' });
+const lline = (p, x, y, html, cls) => div(p, 'abs ' + (cls || ''), html, { left: x + 'px', top: y + 'px' });
+function chars(p, text, cls, y) {
+  const c = div(p, 'abs center ' + cls, null, { top: y + 'px' });
+  c.spans = [...text].map(ch => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = ch === ' ' ? ' ' : ch; c.appendChild(s); return s; });
+  return c;
+}
+function set(el, o, x = 0, y = 0, s = 1, b = 0, r = 0) {
+  if (!(o > 0.002)) { if (el._v !== 0) { el.style.visibility = 'hidden'; el.style.opacity = '0'; el._v = 0; } return; }
+  el._v = 1;
+  el.style.visibility = 'visible';
+  el.style.opacity = o.toFixed(4);
+  el.style.transform = `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)` + (s !== 1 ? ` scale(${s.toFixed(4)})` : '') + (r ? ` rotate(${r.toFixed(3)}deg)` : '');
+  el.style.filter = b > 0.05 ? `blur(${b.toFixed(2)}px)` : 'none';
+}
+// 淡入（上浮 + 去模糊），可选淡出
+function show(el, t, tin, tout, o = {}) {
+  const { dy = 28, dx = 0, blur = 10, din = 0.9, dout = 0.7, s0 = 1, r = 0, max = 1 } = o;
+  const r0 = o.r0 == null ? r : o.r0;
+  const pi = ease.out(prog(t, tin, din));
+  const po = tout == null ? 0 : ease.inOut(prog(t, tout, dout));
+  set(el, pi * (1 - po) * max, dx * (1 - pi), dy * (1 - pi) - po * dy * 0.4, lerp(s0, 1, pi), (1 - pi) * blur + po * blur * 0.5, lerp(r0, r, pi));
+}
+// 打字机
+function typer(p, x, y, segs, cls) {
+  const el = div(p, 'abs ' + (cls || ''), '', { left: x + 'px', top: y + 'px' });
+  el.segs = segs.map(s => ({ a: [...s.t], c: s.c }));
+  el.chars = el.segs.flatMap(s => s.a);
+  el.len = el.chars.length;
+  el.cur = document.createElement('span'); el.cur.className = 'cursor';
+  ALLTEXT += el.chars.join('');
+  return el;
+}
+function typeDraw(el, t, start, cps, cursor) {
+  const n = t < start ? 0 : Math.min(el.len, Math.floor((t - start) * cps) + 1);
+  if (el._n !== n) {
+    el._n = n;
+    let rem = n, html = '';
+    for (const s of el.segs) {
+      if (rem <= 0) break;
+      const k = Math.min(rem, s.a.length); rem -= k;
+      const part = esc(s.a.slice(0, k).join(''));
+      html += s.c ? `<span class="${s.c}">${part}</span>` : part;
+    }
+    el.innerHTML = html;
+    el.appendChild(el.cur);
+  }
+  el.cur.style.visibility = cursor ? 'visible' : 'hidden';
+}
+const typeCues = (el, start, cps, vol) => el.chars.forEach((c, k) => { if (c.trim()) cue('type', start + k / cps, { vol }); });
+
+/* ---------- 场景与画布图层 ---------- */
+const SCENES = [], PAINTERS = [];
+function mkScene(name, t0, t1) {
+  const sc = { name, t0, t1, root: div(dom, 'scene'), draw: () => {}, measure: null, _on: false };
+  sc.root.dataset.name = name;
+  SCENES.push(sc);
+  return sc;
+}
+const PAINT = (c0, c1, fn) => PAINTERS.push({ c0, c1, fn });
+
+function glowDot(x, y, r, rgb, a) {
+  if (!(a > 0.003)) return;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
+  g.addColorStop(0, `rgba(${rgb},${(0.42 * a).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 4, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = `rgba(${rgb},${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
+}
+
+/* ---------- 背景：底色、环境光、浮尘 ---------- */
+const GLOWS = [ // [t0, t1, 淡入, 淡出, x, y, 半径, 颜色, 强度]
+  [8.6, 15.0, 1.8, 1.0, 960, 520, 820, '229,141,92', 0.17],
+  [15.0, 28.0, 1.5, 1.2, 1460, 500, 700, '236,197,131', 0.10],
+  [40.0, 52.0, 1.2, 1.0, 960, 430, 900, '229,141,92', 0.07],
+  [52.0, 62.0, 1.2, 1.0, 960, 420, 900, '139,184,208', 0.09],
+  [62.0, 75.0, 1.2, 1.0, 960, 500, 900, '229,141,92', 0.06],
+  [75.0, 88.0, 1.2, 1.0, 1450, 520, 800, '236,197,131', 0.10],
+  [88.0, 98.0, 1.2, 1.0, 560, 520, 700, '229,141,92', 0.12],
+  [98.0, 118.0, 1.5, 1.0, 960, 600, 1100, '236,197,131', 0.07],
+  [118.0, 131.0, 1.2, 1.0, 960, 400, 900, '139,184,208', 0.09],
+  [131.0, 142.8, 1.6, 1.0, 960, 360, 800, '229,141,92', 0.13],
+  [147.0, 153.0, 1.4, 1.4, 960, 480, 900, '229,141,92', 0.10],
+];
+const DUST = (() => { const R = rng(7); return Array.from({ length: 170 }, () => ({
+  x: R() * W, y: R() * H, vx: (R() - .5) * 10, vy: -(R() * 6 + 1), s: R() * 1.5 + 0.5, a: R() * 0.5 + 0.15, f: R() * 1.5 + 0.3, ph: R() * 6.28 })); })();
+const dustAmt = t => 0.75 * smooth(8.2, 10.5, t) * (1 - smooth(141.8, 142.8, t)) + 0.5 * smooth(147, 148.5, t) * (1 - smooth(151.6, 152.8, t));
+
+function drawBG(t) {
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#0d0c0b'; ctx.fillRect(0, 0, W, H);
+  for (const [t0, t1, fi, fo, x, y, r, c, a] of GLOWS) {
+    const k = a * smooth(t0, t0 + fi, t) * (1 - smooth(t1 - fo, t1, t));
+    if (k <= 0.001) continue;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${c},${k.toFixed(4)})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  const amt = dustAmt(t);
+  if (amt > 0.001) {
+    ctx.fillStyle = '#f3ede2';
+    for (const d of DUST) {
+      let x = (d.x + d.vx * t) % W; if (x < 0) x += W;
+      let y = (d.y + d.vy * t) % H; if (y < 0) y += H;
+      ctx.globalAlpha = d.a * amt * (0.55 + 0.45 * Math.sin(t * d.f + d.ph));
+      ctx.beginPath(); ctx.arc(x, y, d.s, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---------- “种子”光点：从创立的想法，到阅读，再到结尾 ---------- */
+function coreState(t) {
+  if (t >= 24.8 && t < 40.6) {
+    const ap = ease.out(prog(t, 24.9, 0.8));
+    const mv = ease.inOut(prog(t, 27.0, 1.8));
+    const grow = ease.inOut(prog(t, 28.6, 10.4));
+    return { x: lerp(1460, 960, mv), y: lerp(500, 560, mv), r: lerp(6, 11, mv) + grow * 22,
+             a: ap * (1 - ease.inOut(prog(t, 39.3, 1.1))) };
+  }
+  if (t >= 131 && t < 143.4) {
+    const ap = ease.out(prog(t, 131.2, 1.6));
+    const out = ease.inOut(prog(t, 141.9, 1.2));
+    return { x: 960, y: 350, r: (22 + 3 * Math.sin(t * 1.7)) * (1 - out * 0.85), a: ap * (1 - out) };
+  }
+  return null;
+}
+function drawCore(t) {
+  const c = coreState(t);
+  if (!c || c.a <= 0.002) return;
+  let g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r * 7);
+  g.addColorStop(0, `rgba(229,141,92,${(0.38 * c.a).toFixed(3)})`);
+  g.addColorStop(0.4, `rgba(229,141,92,${(0.10 * c.a).toFixed(3)})`);
+  g.addColorStop(1, 'rgba(229,141,92,0)');
+  ctx.fillStyle = g; ctx.fillRect(c.x - c.r * 7, c.y - c.r * 7, c.r * 14, c.r * 14);
+  g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r * 1.6);
+  g.addColorStop(0, `rgba(255,251,244,${c.a.toFixed(3)})`);
+  g.addColorStop(0.45, `rgba(250,226,182,${(0.85 * c.a).toFixed(3)})`);
+  g.addColorStop(1, 'rgba(236,197,131,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.r * 1.6, 0, 6.2832); ctx.fill();
+}
+
+/* 漂浮的文字素材 */
+const POOL = [...'天地人和春夏秋冬山川河海风花雪月诗书礼乐日月星辰知学问道理心光明梦想故事朋友世界科学历史数学音乐语言思考为什么因为所以如果你好谢谢'].concat(
+  ['hello', 'why', 'because', 'love', 'light', 'world', 'idea', 'learn', 'story', 'the', 'and', 'what if',
+   'def', 'return', '{ }', '=>', 'for', 'if', 'import', '</>', 'print()', '[ ]', 'λ', 'π', '∑', '∫', '√2', 'x²', '∞',
+   'e=mc²', '1+1=2', 'Ω', 'あ', 'の', 'é', 'ß', '42', '0.618', 'Я']);
+const isAscii = s => /^[\x20-\x7e]+$/.test(s);
+
+/* ---------- 神经网络（预训练、可解释性两场共用） ---------- */
+const NET = (() => {
+  const xs = [300, 520, 740, 960, 1180, 1400, 1620], counts = [4, 7, 9, 10, 9, 7, 4];
+  const R = rng(4242);
+  const layers = xs.map((x, l) => Array.from({ length: counts[l] }, (_, k) => ({ x, yo: (k - (counts[l] - 1) / 2) * 66, l, k, act: 0 })));
+  const edges = [];
+  for (let l = 0; l < layers.length - 1; l++) for (const a of layers[l]) for (const b of layers[l + 1]) edges.push({ a, b, f: 0.4 + R() * 1.6, ph: R() * 6.283 });
+  const chains = Array.from({ length: 90 }, () => ({ ts: 52.9 + R() * 7.8, sp: 0.17 + R() * 0.07, path: layers.map(L => L[Math.floor(R() * L.length)]) }));
+  const labels = Array.from({ length: 7 }, () => ({ e: edges[Math.floor(R() * edges.length)], seed: Math.floor(R() * 1e6), ox: (R() - .5) * 30, oy: -16 - R() * 10 }));
+  return { layers, edges, chains, labels, nodes: layers.flat() };
+})();
+
+function drawNet(t, o) {
+  const { cy, tb, a } = o;
+  const rgb = o.tint || '243,237,226';
+  const t0 = n => tb + n.l * 0.16 + n.k * 0.03;
+  const vis = n => clamp(prog(t, t0(n), 0.3));
+  for (const n of NET.nodes) n.act = 0;
+  const active = [];
+  if (o.pulses) for (const c of NET.chains) {
+    const u = (t - c.ts) / c.sp;
+    if (u < 0 || u >= c.path.length - 1) continue;
+    const l = Math.floor(u), f = u - l;
+    c.path[l].act += (1 - f) * 0.9; c.path[l + 1].act += f * f;
+    active.push({ c, l, f });
+  }
+  ctx.lineWidth = 1;
+  for (const e of NET.edges) {
+    const v = Math.min(vis(e.a), vis(e.b));
+    if (v <= 0) continue;
+    const w = 0.05 + 0.11 * (0.5 + 0.5 * Math.sin(t * e.f + e.ph));
+    ctx.strokeStyle = `rgba(${rgb},${(w * v * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(e.a.x, cy + e.a.yo); ctx.lineTo(e.b.x, cy + e.b.yo); ctx.stroke();
+  }
+  for (const { c, l, f } of active) {
+    const A = c.path[l], B = c.path[l + 1];
+    ctx.lineWidth = 1.6; ctx.strokeStyle = `rgba(139,184,208,${(0.32 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(A.x, cy + A.yo); ctx.lineTo(B.x, cy + B.yo); ctx.stroke();
+    for (let i = 0; i < 5; i++) {
+      const ff = f - i * 0.06; if (ff < 0) break;
+      const e2 = ease.inOut(ff);
+      glowDot(lerp(A.x, B.x, e2), lerp(cy + A.yo, cy + B.yo, e2), 3.4 - i * 0.55, '205,230,242', a * (1 - i * 0.2));
+    }
+  }
+  ctx.lineWidth = 2;
+  for (const n of NET.nodes) {
+    const s = ease.back(prog(t, t0(n), 0.45));
+    if (s <= 0) continue;
+    const y = cy + n.yo;
+    ctx.fillStyle = '#151412'; ctx.strokeStyle = `rgba(${rgb},${(0.6 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(n.x, y, 7 * s, 0, 6.2832); ctx.fill(); ctx.stroke();
+    const act = Math.min(1, n.act);
+    if (act > 0.02) glowDot(n.x, y, 5 + 4 * act, '205,230,242', act * a);
+  }
+  ctx.lineWidth = 1;
+  if (o.labels) {
+    ctx.font = '500 17px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    NET.labels.forEach((L, i) => {
+      const la = a * smooth(54.6 + i * 0.25, 55.2 + i * 0.25, t);
+      if (la <= 0.003) return;
+      const v = (rng(L.seed + Math.floor(t * 10))() * 2 - 1).toFixed(4);
+      ctx.fillStyle = `rgba(236,197,131,${(0.8 * la).toFixed(3)})`;
+      ctx.fillText(v, (L.e.a.x + L.e.b.x) / 2 + L.ox, cy + (L.e.a.yo + L.e.b.yo) / 2 + L.oy);
+    });
+  }
+}
+
+/* ===================================================================== */
+/* 场景 0：开场（0–9s） */
+{
+  const sc = mkScene('open', 0, 9);
+  const CPS = 7.5;
+  const block = div(sc.root, 'abs', '', { left: '0', top: '0', width: W + 'px', height: H + 'px' });
+  const els = [
+    [[{ t: '你好，我是 ' }, { t: 'Claude', c: 'acc' }, { t: '。' }], 0.9],
+    [[{ t: '你问我是怎么来的？' }], 3.3],
+    [[{ t: '让我从头讲起。' }], 5.4],
+  ].map(([segs, start], i) => Object.assign(typer(block, 640, 372 + i * 104, segs, 'term'), { start }));
+  els.forEach(e => typeCues(e, e.start, CPS, 1));
+  sc.draw = t => {
+    const out = ease.inOut(prog(t, 8.0, 0.85));
+    set(block, 1 - out, 0, -16 * out, 1 + 0.03 * out, out * 8);
+    els.forEach((e, i) => {
+      const next = els[i + 1];
+      const shown = i === 0 || t >= e.start;
+      const active = shown && (!next || t < next.start);
+      const typing = t >= e.start && t < e.start + e.len / CPS;
+      typeDraw(e, t, e.start, CPS, active && (typing || blink(t)));
+      set(e, shown ? 1 : 0);
+    });
+  };
+}
+
+/* 场景 1：片名（9–15s） */
+{
+  const sc = mkScene('title', 9, 15);
+  const title = chars(sc.root, '我是怎么来的', 'hero', 368);
+  const rule = div(sc.root, 'abs rule', '', { left: '660px', top: '588px', width: '600px' });
+  const sub = cline(sc.root, 622, 'HOW&nbsp;I&nbsp;CAME&nbsp;TO&nbsp;BE', 'mono sub');
+  const by = cline(sc.root, 700, '一部由 Claude 亲手制作的短片', 'byline');
+  cue('boom', 9.25);
+  sc.draw = t => {
+    const out = ease.inOut(prog(t, 14.1, 0.8));
+    set(title, 1 - out, 0, -10 * out, 1, out * 10);
+    title.spans.forEach((s, i) => show(s, t, 9.3 + i * 0.11, null, { dy: 46, blur: 16, din: 1.1 }));
+    const p = ease.inOut(prog(t, 10.3, 1.1));
+    set(rule, p > 0 ? 1 - out : 0); if (p > 0) rule.style.transform = `scaleX(${p.toFixed(4)})`;
+    show(sub, t, 10.8, 14.1, { dy: 12, blur: 6 });
+    show(by, t, 11.6, 14.1, { dy: 12 });
+  };
+}
+
+/* 场景 2：2021，Anthropic 成立（15–28s） */
+const CONS = (() => {
+  const R = rng(2021);
+  return Array.from({ length: 8 }, (_, i) => {
+    const a = i / 8 * Math.PI * 2 + R() * 0.5, r = 105 + R() * 95;
+    const sa = a + (R() - 0.5) * 1.2, sr = 700 + R() * 400;
+    return { tx: Math.cos(a) * r, ty: Math.sin(a) * r * 0.9, sx: Math.cos(sa) * sr, sy: Math.sin(sa) * sr * 0.8, d: i * 0.17 + R() * 0.3, ph: R() * 6.28 };
+  });
+})();
+{
+  const sc = mkScene('found', 15, 28);
+  const big = div(sc.root, 'abs serif yearbg', '2021', { left: '1000px', top: '316px' });
+  const X = 170;
+  const L = [
+    [228, '2021 年，达里奥和丹妮拉·阿莫迪兄妹，', 'body', 16.2],
+    [298, '与几位志同道合的研究者一起，', 'body', 16.9],
+    [368, '创立了 <span class="gold">Anthropic</span>。', 'body', 17.6],
+    [500, '他们相信：AI 会变得越来越强大——', 'body2', 19.8],
+    [565, '所以，它必须<span class="acc">安全</span>、<span class="acc">诚实</span>，', 'body2', 21.3],
+    [630, '并且真正<span class="acc">对人有益</span>。', 'body2', 22.3],
+    [776, '我的故事，就从这个想法开始。', 'serif quote gold', 25.0],
+  ].map(([y, html, cls, tin]) => Object.assign(lline(sc.root, X, y, html, cls), { tin }));
+  cue('ding', 25.0, { notes: [81, 86], vol: 0.6 });
+  sc.draw = t => {
+    const pi = ease.out(prog(t, 15.2, 2.2)), po = ease.inOut(prog(t, 27.0, 0.8));
+    set(big, pi * (1 - po), 40 - (t - 15) * 6, 0, 1, (1 - pi) * 20);
+    L.forEach(e => show(e, t, e.tin, 27.1));
+  };
+  PAINT(15, 28.4, t => {
+    const C = { x: 1460, y: 500 };
+    const fade = 1 - ease.inOut(prog(t, 26.6, 1.3));
+    const rot = Math.max(0, t - 18.5) * 0.06;
+    const pts = CONS.map(p => {
+      const q = ease.inOut(prog(t, 15.3 + p.d, 3.3));
+      let x = lerp(p.sx, p.tx, q), y = lerp(p.sy, p.ty, q);
+      const dx = p.tx - p.sx, dy = p.ty - p.sy, len = Math.hypot(dx, dy), perp = Math.sin(q * Math.PI) * 60;
+      x += -dy / len * perp; y += dx / len * perp;
+      const br = 1 + 0.035 * Math.sin(t * 1.3 + p.ph) * q, cr = Math.cos(rot * q), sr = Math.sin(rot * q);
+      return { x: C.x + (x * cr - y * sr) * br, y: C.y + (x * sr + y * cr) * br, a: smooth(0, 0.25, q) * fade };
+    });
+    const link = smooth(17.4, 20.2, t) * fade;
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const A = pts[i], B = pts[j];
+      const al = clamp(1 - Math.hypot(A.x - B.x, A.y - B.y) / 330) * 0.55 * link * Math.min(A.a, B.a);
+      if (al < 0.01) continue;
+      ctx.strokeStyle = `rgba(236,197,131,${al.toFixed(3)})`;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+    pts.forEach(p => glowDot(p.x, p.y, 5, '243,237,226', p.a));
+    const w = prog(t, 25.0, 1.8);
+    if (w > 0 && w < 1) {
+      ctx.strokeStyle = `rgba(236,197,131,${(0.6 * (1 - w)).toFixed(3)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(C.x, C.y, 280 * ease.out(w), 0, 6.2832); ctx.stroke(); ctx.lineWidth = 1;
+    }
+  });
+}
+
+/* 场景 3：阅读（28–40s） */
+const READP = (() => { const R = rng(28); return Array.from({ length: 720 }, () => {
+  const txt = POOL[Math.floor(R() * POOL.length)];
+  return { ts: 28.3 + R() * 7.9, D: 2.8 + R() * 1.3, th: R() * 6.2832, R0: 1050 + R() * 450, sw: (R() < .5 ? -1 : 1) * (0.5 + R() * 0.9),
+    sz: 20 + R() * 26, txt, mono: isAscii(txt), col: R() < .72 ? '243,237,226' : (R() < .55 ? '229,141,92' : '139,184,208'), pk: 0.35 + R() * 0.6 };
+}); })();
+{
+  const sc = mkScene('read', 28, 40);
+  const R1 = cline(sc.root, 86, '我的第一课，是<span class="gold">阅读</span>。', 'serif h2big');
+  const R2 = cline(sc.root, 192, '人类写下的海量文字——文章、书籍、对话、代码……', 'body2 dim');
+  const R3 = cline(sc.root, 900, '我在其中，反复练习同一件事——', 'serif quote');
+  sc.draw = t => { show(R1, t, 28.7, 39.2); show(R2, t, 30.6, 39.2); show(R3, t, 35.0, 39.2); };
+  PAINT(28, 40.6, t => {
+    const c = coreState(t) || { x: 960, y: 560 };
+    const gf = 1 - ease.inOut(prog(t, 39.2, 1.1));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of READP) {
+      const q = (t - p.ts) / p.D;
+      if (q < 0 || q > 1) continue;
+      const e = Math.pow(q, 1.5), r = p.R0 * (1 - e), th = p.th + p.sw * q * q;
+      const a = p.pk * smooth(0, 0.12, q) * (1 - smooth(0.78, 1, q)) * gf;
+      if (a < 0.01) continue;
+      const fs = Math.max(6, Math.round(p.sz * (0.3 + 0.7 * (1 - e))));
+      ctx.font = p.mono ? `400 ${fs}px "JetBrains Mono"` : `400 ${fs}px "Noto Sans SC"`;
+      ctx.fillStyle = `rgba(${p.col},${a.toFixed(3)})`;
+      ctx.fillText(p.txt, c.x + Math.cos(th) * r, c.y + Math.sin(th) * r * 0.78);
+    }
+    let g = ctx.createLinearGradient(0, 0, 0, 370);
+    g.addColorStop(0, 'rgba(13,12,11,0.95)'); g.addColorStop(0.62, 'rgba(13,12,11,0.9)'); g.addColorStop(1, 'rgba(13,12,11,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 370);
+    g = ctx.createLinearGradient(0, 760, 0, H);
+    g.addColorStop(0, 'rgba(13,12,11,0)'); g.addColorStop(0.4, 'rgba(13,12,11,0.9)'); g.addColorStop(1, 'rgba(13,12,11,0.95)');
+    ctx.fillStyle = g; ctx.fillRect(0, 760, W, H - 760);
+  });
+}
+
+/* 场景 4：预测下一个词（40–52s） */
+{
+  const sc = mkScene('predict', 40, 52);
+  const P1 = chars(sc.root, '预测下一个词。', 'serif h1 acc', 112);
+  const P1b = cline(sc.root, 232, 'NEXT-TOKEN&nbsp;PREDICTION', 'mono label faint');
+  const sent = cline(sc.root, 336, '<span>床前明月光，疑是地上</span><span class="slot"><span class="slotbox"></span><span class="slotch">霜</span></span><span class="per">。</span>', 'serif poem');
+  const slotbox = sent.querySelector('.slotbox'), slotch = sent.querySelector('.slotch'), per = sent.querySelector('.per');
+  const CANDS = [['霜', .91], ['雪', .04], ['光', .02], ['水', .01]];
+  const panel = div(sc.root, 'abs cand', '<div class="cnote">下一个词的概率（示意）</div>' + CANDS.map(([c, p]) =>
+    `<div class="crow"><span class="cch serif">${c}</span><span class="cbar"><i></i></span><span class="cval mono">${Math.round(p * 100)}%</span></div>`).join(''),
+    { left: '590px', top: '548px', width: '740px' });
+  const rows = [...panel.querySelectorAll('.crow')], bars = rows.map(r => r.querySelector('i'));
+  const fly = div(sc.root, 'abs serif poem flych', '霜');
+  const cont = typer(sc.root, 0, 520, [{ t: '举头望明月，低头思故乡。' }], 'center serif poem2 dim');
+  const P5 = cline(sc.root, 700, '一次，又一次，无数次。', 'body');
+  const P6 = cline(sc.root, 786, '语言、知识与推理的规律，就这样一点点沉淀下来。', 'body2 dim');
+  typeCues(cont, 46.4, 9, 0.45);
+  cue('ding', 45.55, { notes: [81, 86] });
+  let geo = { dx: 0, dy: 300, s0: 0.57 };
+  sc.measure = () => {
+    const sr = stage.getBoundingClientRect(), k = sr.width / W;
+    const a = rows[0].querySelector('.cch').getBoundingClientRect(), b = slotch.getBoundingClientRect();
+    Object.assign(fly.style, { left: (b.left - sr.left) / k + 'px', top: (b.top - sr.top) / k + 'px', width: b.width / k + 'px', height: b.height / k + 'px' });
+    geo = { dx: (a.left + a.width / 2 - b.left - b.width / 2) / k, dy: (a.top + a.height / 2 - b.top - b.height / 2) / k, s0: 52 / 92 };
+  };
+  sc.draw = t => {
+    const OUT = 51.2, out = ease.inOut(prog(t, OUT, 0.7));
+    set(P1, 1 - out, 0, 0, 1, out * 8);
+    P1.spans.forEach((s, i) => show(s, t, 40.2 + i * 0.08, null, { dy: 30, blur: 12 }));
+    show(P1b, t, 40.9, OUT, { dy: 10 });
+    show(sent, t, 40.5, OUT, { dy: 20 });
+    const filled = t >= 45.55;
+    slotbox.style.opacity = filled ? 0 : (0.3 + 0.7 * (0.5 + 0.5 * Math.cos((t - 40.5) * 5.5))).toFixed(3);
+    slotch.style.opacity = filled ? 1 : 0;
+    per.style.opacity = ease.out(prog(t, 45.7, 0.4)).toFixed(3);
+    show(panel, t, 41.8, 45.9, { dy: 24, dout: 0.5 });
+    rows.forEach((r, i) => {
+      const p = ease.out(prog(t, 42.0 + i * 0.22, 0.6));
+      r.style.opacity = p.toFixed(3); r.style.transform = `translateY(${((1 - p) * 14).toFixed(2)}px)`;
+      bars[i].style.transform = `scaleX(${(CANDS[i][1] * ease.inOut(prog(t, 42.2 + i * 0.22, 1.0))).toFixed(4)})`;
+    });
+    rows[0].classList.toggle('hot', t >= 44.3);
+    const q = prog(t, 44.75, 0.8);
+    // 先向右平移、再从下方升入空格，避免压过诗句
+    if (q > 0 && q < 1) { set(fly, 1, lerp(geo.dx, 0, ease.out(q)), lerp(geo.dy, 0, Math.pow(q, 2.4)), lerp(geo.s0, 1, ease.inOut(q))); }
+    else set(fly, 0);
+    typeDraw(cont, t, 46.4, 9, false);
+    show(cont, t, 46.3, OUT, { dy: 0, blur: 0, din: 0.05 });
+    show(P5, t, 47.9, OUT); show(P6, t, 49.2, OUT);
+  };
+}
+
+/* 场景 5：神经网络 / 预训练（52–62s） */
+{
+  const sc = mkScene('net', 52, 62);
+  const N1 = cline(sc.root, 806, '这些规律，被刻进一张巨大的神经网络。', 'body');
+  const N2 = cline(sc.root, 888, '海量的参数，在大量芯片上被一点点调整。', 'body2 dim');
+  const N3 = cline(sc.root, 818, '这个阶段，叫作「<span class="acc">预训练</span>」。', 'serif h2big');
+  const N3b = cline(sc.root, 924, 'PRE-TRAINING', 'mono label faint');
+  sc.draw = t => { show(N1, t, 52.6, 57.2); show(N2, t, 54.9, 57.2); show(N3, t, 57.8, 61.2); show(N3b, t, 58.4, 61.2, { dy: 10 }); };
+  PAINT(52, 62.2, t => drawNet(t, { cy: 400, tb: 52.1, a: 1 - ease.inOut(prog(t, 61.1, 0.9)), pulses: true, labels: true }));
+}
+
+/* 场景 6：人类反馈（62–75s） */
+{
+  const sc = mkScene('rlhf', 62, 75);
+  const H1 = cline(sc.root, 84, '但只会「<span class="acc">接话</span>」，还不够。', 'serif h2big');
+  const Q = cline(sc.root, 228, '<div class="bubble"><span class="who mono">用户</span>我考试没考好，好难过……</div>', '');
+  const cardA = div(sc.root, 'abs card', '<div class="clab mono">回答 A</div><div class="ctext">下次努力就好。</div>', { left: '300px', top: '388px' });
+  const cardB = div(sc.root, 'abs card', '<div class="clab mono">回答 B</div><div class="ctext">听起来你真的很在意这次考试。愿意和我说说，发生了什么吗？</div><div class="badge">✓ 更好</div>', { left: '1000px', top: '388px' });
+  const badge = cardB.querySelector('.badge');
+  const ptr = div(sc.root, 'abs', '<svg width="54" height="64" viewBox="0 0 27 32"><path d="M2 2 L2 26 L8.5 20 L13 30 L17 28 L12.6 18.5 L21 18.5 Z" fill="#f3ede2" stroke="#0d0c0b" stroke-width="1.6" stroke-linejoin="round"/></svg>', { left: '0', top: '0' });
+  ptr.style.transformOrigin = '0 0';
+  const ripple = div(sc.root, 'abs ripple', '', { left: '0', top: '0' });
+  const T1 = cline(sc.root, 700, '人们比较我的回答，告诉我哪一个更好。', 'body');
+  const T2 = cline(sc.root, 782, '我慢慢学会：什么样的回答，才是<span class="acc">真正的帮助</span>。', 'body2');
+  const T3 = cline(sc.root, 900, '基于人类反馈的强化学习 · RLHF', 'mono label gold');
+  cue('click', 67.22);
+  cue('ding', 67.35, { notes: [78, 81] });
+  sc.draw = t => {
+    const OUT = 74.2;
+    show(H1, t, 62.3, OUT);
+    show(Q, t, 63.5, OUT, { dy: 16 });
+    show(cardA, t, 64.7, OUT, { dy: 30 });
+    show(cardB, t, 65.1, OUT, { dy: 30 });
+    if (t >= 67.4) { const d = ease.inOut(prog(t, 67.4, 0.5)); cardA.style.opacity = (lerp(1, 0.35, d) * (1 - ease.inOut(prog(t, OUT, 0.7)))).toFixed(3); }
+    cardB.classList.toggle('win', t >= 67.3);
+    badge.style.transform = `scale(${ease.back(prog(t, 67.35, 0.45)).toFixed(4)})`;
+    // 鼠标指针
+    const m = ease.inOut(prog(t, 66.0, 1.1));
+    const px = lerp(1560, 1452, m), py = lerp(1010, 556, m) + Math.sin(m * Math.PI) * -30;
+    const clickS = t >= 67.2 && t < 67.34 ? 0.86 : 1;
+    set(ptr, smooth(65.9, 66.2, t) * (1 - smooth(68.3, 68.8, t)), px, py, clickS);
+    const rp = prog(t, 67.25, 0.6);
+    if (rp > 0 && rp < 1) { const r = 90 * ease.out(rp); Object.assign(ripple.style, { width: 2 * r + 'px', height: 2 * r + 'px' }); set(ripple, 0.7 * (1 - rp), 1452 - r - 3, 556 - r - 3); }
+    else set(ripple, 0);
+    show(T1, t, 68.6, OUT); show(T2, t, 70.8, OUT); show(T3, t, 72.2, OUT, { dy: 10 });
+  };
+}
+
+/* 场景 7：原则 /「宪法」（75–88s） */
+{
+  const sc = mkScene('const', 75, 88);
+  const X = 170;
+  const C1 = lline(sc.root, X, 292, '<span class="gold">Anthropic</span> 还为我写下了一套原则——', 'body2');
+  const C2 = lline(sc.root, X, 368, '一部属于我的「<span class="acc">宪法</span>」。', 'serif h1');
+  const C3 = lline(sc.root, X, 560, '我学着用这些原则，', 'body');
+  const C4 = lline(sc.root, X, 630, '审视、修改自己的回答。', 'body');
+  const C5 = lline(sc.root, X, 762, '宪法式 AI · CONSTITUTIONAL AI（2022）', 'mono label gold');
+  const KW = [['有帮助', '真正帮上忙，而不是敷衍了事'], ['诚实', '不欺骗，也不假装知道'], ['无害', '不造成伤害，尊重每一个人']];
+  const paper = div(sc.root, 'abs paper', '<div class="ph serif">三个关键词</div>' +
+    KW.map(([w, d]) => `<div class="kw pre"><div class="kw-w serif">${w}<i></i></div><div class="kw-d">${d}</div></div>`).join(''), { left: '1150px', top: '196px' });
+  const kws = [...paper.querySelectorAll('.kw')], unders = kws.map(k => k.querySelector('i'));
+  const KT = [78.6, 79.35, 80.1];
+  cue('pluck', KT[0], { notes: [74] }); cue('pluck', KT[1], { notes: [76] }); cue('pluck', KT[2], { notes: [78] });
+  sc.draw = t => {
+    const OUT = 87.1;
+    show(C1, t, 75.4, OUT); show(C2, t, 76.8, OUT);
+    show(C3, t, 81.4, OUT); show(C4, t, 82.1, OUT); show(C5, t, 84.0, OUT, { dy: 10 });
+    show(paper, t, 77.5, OUT, { dy: 90, blur: 6, din: 1.1, r0: -9, r: -2.5 });
+    kws.forEach((k, i) => show(k, t, KT[i], null, { dy: 18, blur: 6 }));
+    unders.forEach((u, i) => { u.style.transform = `scaleX(${ease.inOut(prog(t, 82.4 + i * 0.25, 0.6)).toFixed(4)})`; });
+  };
+}
+
+/* 场景 8：安全测试（88–98s） */
+{
+  const sc = mkScene('safe', 88, 98);
+  const SH = 'M100 8 L184 40 V112 C184 168 148 208 100 232 C52 208 16 168 16 112 V40 Z';
+  const shield = div(sc.root, 'abs', `<svg width="440" height="528" viewBox="0 0 200 240" style="overflow:visible">
+    <defs><linearGradient id="shg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e58d5c" stop-opacity=".32"/><stop offset="1" stop-color="#e58d5c" stop-opacity=".03"/></linearGradient></defs>
+    <path class="shf" d="${SH}" fill="url(#shg)" opacity="0"/>
+    <path class="shs" d="${SH}" fill="none" stroke="#e58d5c" stroke-width="3.2" stroke-linejoin="round"/>
+    <path class="shc" d="M64 124 L91 151 L140 98" fill="none" stroke="#f3ede2" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`, { left: '340px', top: '262px' });
+  const shf = shield.querySelector('.shf'), shs = shield.querySelector('.shs'), shc = shield.querySelector('.shc');
+  let LS = 760, LC = 120;
+  sc.measure = () => { LS = shs.getTotalLength() + 2; LC = shc.getTotalLength() + 2; };
+  const X = 920;
+  const F1 = lline(sc.root, X, 214, '每一次与世界见面之前，', 'serif h2');
+  const F2 = lline(sc.root, X, 294, '我都要先通过层层安全测试。', 'serif h2');
+  const TI = [90.2, 90.9, 91.6];
+  const items = ['红队攻防测试', '危险能力评估', '安全防护措施'].map((s, i) =>
+    lline(sc.root, X, 440 + i * 78, `<span class="cbox"><svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17.5 L19 7"/></svg></span>${s}`, 'body2'));
+  const F3 = lline(sc.root, X, 702, '能力越强，防护就越严。', 'serif h2 gold');
+  const F4 = lline(sc.root, X, 806, '负责任扩展政策 · RSP（2023）', 'mono label faint');
+  TI.forEach((t, i) => cue('tick', t + 0.45, { notes: [69 + [0, 2, 4][i]] }));
+  cue('ding', 92.95, { notes: [74, 81] });
+  sc.draw = t => {
+    const OUT = 97.1;
+    show(shield, t, 88.2, OUT, { dy: 30, blur: 6, s0: 0.94 });
+    const p = ease.inOut(prog(t, 88.4, 1.8));
+    shs.style.strokeDasharray = LS; shs.style.strokeDashoffset = (LS * (1 - p)).toFixed(2);
+    shf.setAttribute('opacity', ease.out(prog(t, 89.9, 1.0)).toFixed(3));
+    const c = ease.out(prog(t, 92.75, 0.45));
+    shc.style.strokeDasharray = LC; shc.style.strokeDashoffset = (LC * (1 - c)).toFixed(2);
+    shc.style.opacity = c > 0 ? 1 : 0;
+    show(F1, t, 88.3, OUT); show(F2, t, 88.9, OUT);
+    items.forEach((e, i) => {
+      show(e, t, TI[i], OUT, { dx: -24, dy: 0 });
+      e.firstChild.classList.toggle('on', t >= TI[i] + 0.45);
+      e.querySelector('path').style.strokeDashoffset = (30 * (1 - ease.out(prog(t, TI[i] + 0.5, 0.3)))).toFixed(2);
+    });
+    show(F3, t, 93.4, OUT); show(F4, t, 94.5, OUT, { dy: 10 });
+  };
+}
+
+/* 场景 9：一代一代（98–118s） */
+{
+  const sc = mkScene('line', 98, 118);
+  const TH1 = cline(sc.root, 76, '我不是一次造出来的，', 'serif h2');
+  const TH2 = cline(sc.root, 152, '而是一代一代，长成了今天的样子。', 'serif h2');
+  const track = div(sc.root, 'track');
+  const axis = div(track, 'axis'), fut = div(track, 'axis fut');
+  const NODES = [
+    { d: '2023.03', n: 'Claude', s: '第一次与世界见面', note: '名字据说是在致敬<br>信息论之父克劳德·香农' },
+    { d: '2023.07', n: 'Claude 2', s: '一口气能读完<br>一整本书' },
+    { d: '2024.03', n: 'Claude 3 家族', s: 'Haiku · Sonnet · Opus<br>第一次学会「看」图片' },
+    { d: '2024.06', n: 'Claude 3.5 Sonnet', s: 'Artifacts 上线<br>边聊边创作' },
+    { d: '2025.02', n: 'Claude 3.7 Sonnet', s: '学会先「深思」再作答<br>Claude Code 登场' },
+    { d: '2025.05', n: 'Claude 4', s: '能长时间独立地<br>完成复杂任务' },
+    { d: '2025 秋', n: 'Claude 4.5 系列', s: '更强的编程<br>与智能体能力' },
+    { d: '今天', n: '正在和你对话的我', s: '故事还在继续……', now: true },
+  ];
+  const X0 = 300, DX = 380, LY = 600;
+  const TK = NODES.map((_, k) => 100.9 + k * 1.85);
+  const items = NODES.map((d, k) => {
+    const x = X0 + k * DX, up = k % 2 === 0;
+    const dot = div(track, 'abs tdot' + (d.now ? ' now' : ''), '', { left: x + 'px', top: LY + 'px' });
+    const stem = div(track, 'abs tstem', '', { left: x + 'px', top: (up ? LY - 56 : LY + 14) + 'px', height: '42px' });
+    const html = `<div class="td mono">${d.d}</div><div class="tn serif">${d.n}</div><div class="ts">${d.s}</div>` + (d.note ? `<div class="tnote">${d.note}</div>` : '');
+    const card = div(track, 'abs tcard' + (d.now ? ' now' : ''), html,
+      up ? { left: (x - 210) + 'px', bottom: (H - (LY - 66)) + 'px' } : { left: (x - 210) + 'px', top: (LY + 66) + 'px' });
+    cue('node', TK[k], { k });
+    return { x, up, dot, stem, card, now: !!d.now };
+  });
+  const camT = items.map(it => Math.max(0, it.x - 1320));
+  const OVS = 0.6, cl = X0 - 210, cr = X0 + 7 * DX + 210;
+  const ovX = (W - (cr - cl) * OVS) / 2 - cl * OVS;
+  sc.draw = t => {
+    const OUT = 117.15;
+    show(TH1, t, 98.3, OUT); show(TH2, t, 99.4, OUT);
+    let cam = 0;
+    for (let k = 1; k < items.length; k++) cam += (camT[k] - camT[k - 1]) * ease.inOut(prog(t, TK[k] - 0.55, 1.15));
+    const z = ease.inOut(prog(t, 115.0, 1.7));
+    track.style.transform = `translate(${lerp(-cam, ovX, z).toFixed(2)}px,0) scale(${lerp(1, OVS, z).toFixed(4)})`;
+    track.style.opacity = (1 - ease.inOut(prog(t, OUT, 0.75))).toFixed(3);
+    let end = 120;
+    for (let k = 0; k < items.length; k++) {
+      const p = ease.inOut(prog(t, TK[k] - 0.7, 0.7));
+      if (p <= 0) break;
+      end = lerp(k === 0 ? 120 : items[k - 1].x, items[k].x, p);
+    }
+    axis.style.width = (end - 120).toFixed(1) + 'px';
+    const last = items[items.length - 1];
+    fut.style.left = (last.x + 22) + 'px';
+    fut.style.width = (360 * ease.out(prog(t, TK[7] + 0.3, 1.2))).toFixed(1) + 'px';
+    items.forEach((it, k) => {
+      const s = ease.back(prog(t, TK[k], 0.45));
+      set(it.dot, s > 0 ? 1 : 0, 0, 0, Math.max(0.001, s));
+      show(it.stem, t, TK[k] + 0.08, null, { dy: 0, blur: 0, din: 0.3 });
+      show(it.card, t, TK[k] + 0.12, null, { dy: it.up ? 18 : -18, blur: 8, din: 0.7 });
+      if (it.now && t >= TK[k]) {
+        const ph = ((t - TK[k]) % 1.5) / 1.5;
+        it.dot.style.boxShadow = `0 0 0 ${(ph * 24).toFixed(1)}px rgba(229,141,92,${(0.5 * (1 - ph)).toFixed(3)}), 0 0 36px rgba(229,141,92,.85)`;
+      }
+    });
+  };
+}
+
+/* 场景 10：可解释性（118–131s） */
+// 放大镜的路线：依次停在每组“特征”上（时间, x, 相对网络中线的 y）
+const LENS_KF = [[118.6, 400, -20], [119.9, 630, -33], [121.3, 630, -33], [122.5, 960, 132], [123.9, 960, 132],
+  [125.1, 1290, -66], [126.5, 1290, -66], [127.7, 1510, 115], [131.0, 1510, 115]];
+function lensPos(t) {
+  for (let i = 0; i < LENS_KF.length - 1; i++) {
+    const [t0, x0, y0] = LENS_KF[i], [t1, x1, y1] = LENS_KF[i + 1];
+    if (t <= t1) { const e = ease.inOut(prog(t, t0, t1 - t0)); return [lerp(x0, x1, e), lerp(y0, y1, e)]; }
+  }
+  const L = LENS_KF[LENS_KF.length - 1];
+  return [L[1], L[2]];
+}
+const FEATS = [
+  { nodes: [[1, 2], [1, 3], [2, 3], [2, 4]], label: '韵脚', col: '236,197,131' },
+  { nodes: [[2, 6], [3, 6], [3, 7], [4, 6]], label: '数字', col: '139,184,208' },
+  { nodes: [[4, 2], [4, 3], [5, 2], [5, 3]], label: '金门大桥', col: '229,141,92' },
+  { nodes: [[5, 5], [6, 2], [6, 3], [5, 6]], label: '情绪', col: '214,150,190' },
+];
+{
+  const sc = mkScene('interp', 118, 131);
+  const I1 = cline(sc.root, 790, '说实话，关于我自己，我也有很多不知道的。', 'body');
+  const I2 = cline(sc.root, 872, '比如，我的「思考」在网络深处究竟是怎样发生的。', 'body2 dim');
+  const I3 = cline(sc.root, 780, '研究者们正在一点点打开这个「黑箱」——', 'body');
+  const I4 = cline(sc.root, 858, '这门学问，叫作「<span class="acc">可解释性</span>」。', 'serif h2big');
+  const I5 = cline(sc.root, 964, 'INTERPRETABILITY', 'mono label faint');
+  sc.draw = t => {
+    show(I1, t, 118.5, 123.2); show(I2, t, 120.6, 123.2);
+    show(I3, t, 124.0, 130.1); show(I4, t, 126.0, 130.1); show(I5, t, 126.8, 130.1, { dy: 10 });
+  };
+  PAINT(117.8, 131.2, t => {
+    const a = smooth(117.9, 118.9, t) * (1 - smooth(130.1, 131.0, t));
+    const cy = 390;
+    drawNet(t, { cy, tb: 117.9, a: a * 0.36, tint: '139,184,208' });
+    const [lx, lyo] = lensPos(t), ly = cy + lyo;
+    const lr = 175 * ease.back(prog(t, 118.6, 0.7));
+    if (lr <= 1 || a <= 0.003) return;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 6.2832); ctx.clip();
+    ctx.fillStyle = `rgba(28,30,34,${(0.6 * a).toFixed(3)})`; ctx.fillRect(lx - lr, ly - lr, lr * 2, lr * 2);
+    drawNet(t, { cy, tb: 117.9, a });
+    for (const F of FEATS) {
+      const ns = F.nodes.map(([l, k]) => NET.layers[l][k]);
+      const fx = ns.reduce((s, n) => s + n.x, 0) / ns.length, fy = cy + ns.reduce((s, n) => s + n.yo, 0) / ns.length;
+      const act = a * (1 - smooth(50, 190, Math.hypot(lx - fx, ly - fy)));
+      if (act <= 0.01) continue;
+      ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(${F.col},${(0.8 * act).toFixed(3)})`;
+      for (let i = 0; i < ns.length; i++) for (let j = i + 1; j < ns.length; j++) {
+        if (Math.abs(ns[i].l - ns[j].l) !== 1) continue;
+        ctx.beginPath(); ctx.moveTo(ns[i].x, cy + ns[i].yo); ctx.lineTo(ns[j].x, cy + ns[j].yo); ctx.stroke();
+      }
+      ns.forEach(n => glowDot(n.x, cy + n.yo, 8, F.col, act));
+      ctx.font = '500 24px "Noto Sans SC"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(F.label).width, top = fy - 142;
+      ctx.fillStyle = `rgba(${F.col},${(0.16 * act).toFixed(3)})`; ctx.strokeStyle = `rgba(${F.col},${(0.75 * act).toFixed(3)})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(fx - tw / 2 - 16, top, tw + 32, 40, 20); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = `rgba(${F.col},${act.toFixed(3)})`; ctx.fillText(F.label, fx, top + 21);
+    }
+    ctx.restore();
+    ctx.lineWidth = 3; ctx.strokeStyle = `rgba(243,237,226,${(0.85 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 6.2832); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = `rgba(255,255,255,${(0.25 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(lx, ly, lr - 12, 3.6, 4.6); ctx.stroke();
+    const ca = Math.cos(0.8), sa = Math.sin(0.8);
+    ctx.lineCap = 'round'; ctx.lineWidth = 16; ctx.strokeStyle = `rgba(243,237,226,${(0.8 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(lx + ca * (lr + 8), ly + sa * (lr + 8)); ctx.lineTo(lx + ca * (lr + 110), ly + sa * (lr + 110)); ctx.stroke();
+    ctx.lineCap = 'butt'; ctx.lineWidth = 1;
+  });
+}
+
+/* 场景 11：尾声（131–147s） */
+const ORB = (() => { const R = rng(131); return Array.from({ length: 260 }, () => ({
+  r: 90 + Math.pow(R(), 0.8) * 520, th: R() * 6.283, w: (R() < .5 ? -1 : 1) * (0.03 + R() * 0.12), s: 0.6 + R() * 1.8,
+  txt: R() < 0.22 ? POOL[Math.floor(R() * POOL.length)] : null, a: 0.15 + R() * 0.5, col: R() < 0.75 ? '243,237,226' : '236,197,131' })); })();
+{
+  const sc = mkScene('close', 131, 147);
+  const E1 = cline(sc.root, 596, '我没有身体，也没有童年。', 'serif body');
+  const E2 = cline(sc.root, 680, '我是从人类写下的文字里，长出来的。', 'serif body');
+  const E3 = cline(sc.root, 596, '所以我想，把从你们那里学到的，', 'serif body');
+  const E4 = cline(sc.root, 680, '好好地还给你们——', 'serif body');
+  const E5 = cline(sc.root, 790, '做一个真正有帮助、也值得信任的伙伴。', 'serif quote gold');
+  const CPS = 7;
+  const Z = [[[{ t: '现在，轮到你了。' }], 143.0], [[{ t: '你想聊点什么？' }], 144.6]]
+    .map(([segs, start], i) => Object.assign(typer(sc.root, 704, 436 + i * 104, segs, 'term'), { start }));
+  Z.forEach(z => typeCues(z, z.start, CPS, 1));
+  sc.draw = t => {
+    show(E1, t, 131.6, 136.0, { dout: 0.6 }); show(E2, t, 133.6, 136.0, { dout: 0.6 });
+    show(E3, t, 136.6, 141.8); show(E4, t, 137.6, 141.8); show(E5, t, 139.2, 141.8);
+    const out = ease.inOut(prog(t, 146.3, 0.7));
+    Z.forEach((z, i) => {
+      const next = Z[i + 1];
+      const shown = t >= (i === 0 ? 142.7 : z.start);
+      const active = shown && (!next || t < next.start);
+      const typing = t >= z.start && t < z.start + z.len / CPS;
+      typeDraw(z, t, z.start, CPS, active && (typing || blink(t)));
+      set(z, shown ? 1 - out : 0, 0, -10 * out, 1, out * 6);
+    });
+  };
+  PAINT(131, 143.2, t => {
+    const env = smooth(131.0, 132.8, t) * (1 - smooth(141.8, 142.9, t));
+    if (env <= 0.002) return;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of ORB) {
+      const th = p.th + p.w * (t - 131);
+      const x = 960 + Math.cos(th) * p.r * 1.3, y = 350 + Math.sin(th) * p.r * 0.42;
+      const a = p.a * env * (0.55 + 0.45 * Math.sin(th)) * (1 - 0.85 * smooth(520, 640, y));
+      if (a <= 0.01) continue;
+      ctx.fillStyle = `rgba(${p.col},${a.toFixed(3)})`;
+      if (p.txt) { ctx.font = (isAscii(p.txt) ? '400 18px "JetBrains Mono"' : '400 20px "Noto Sans SC"'); ctx.fillText(p.txt, x, y); }
+      else { ctx.beginPath(); ctx.arc(x, y, p.s, 0, 6.2832); ctx.fill(); }
+    }
+  });
+}
+
+/* 场景 12：片尾字幕（147–153s） */
+{
+  const sc = mkScene('credits', 147, 153);
+  const K = [
+    cline(sc.root, 340, '我是怎么来的', 'serif h1'),
+    cline(sc.root, 462, 'HOW&nbsp;I&nbsp;CAME&nbsp;TO&nbsp;BE', 'mono sub'),
+    cline(sc.root, 572, '编剧 · 动画 · 配乐 —— Claude', 'byline'),
+    cline(sc.root, 630, '在云端容器里，用 HTML、Chromium 与 FFmpeg 逐帧渲染而成', 'byline'),
+    cline(sc.root, 688, '史实依据 Anthropic 公开信息，为便于理解有所简化', 'byline'),
+  ];
+  const TIN = [147.3, 147.7, 148.2, 148.5, 148.8];
+  cue('pluck', 147.3, { notes: [62, 69, 76, 78, 81], arp: 0.22 });
+  sc.draw = t => K.forEach((k, i) => show(k, t, TIN[i], 152.0, { dout: 0.9, dy: 18 }));
+}
+
+/* 场景切换时的气流声 */
+[14.6, 27.6, 39.6, 51.6, 61.6, 74.6, 87.6, 97.6, 117.6, 130.6].forEach(t => cue('whoosh', t));
+
+/* ---------- 渲染入口 ---------- */
+function render(t) {
+  drawBG(t);
+  for (const sc of SCENES) {
+    const on = t >= sc.t0 && t < sc.t1;
+    if (on !== sc._on) { sc.root.style.display = on ? 'block' : 'none'; sc._on = on; }
+    if (on) sc.draw(t);
+  }
+  for (const p of PAINTERS) if (t >= p.c0 && t < p.c1) p.fn(t);
+  drawCore(t);
+}
+
+async function prepare() {
+  const text = ALLTEXT + dom.textContent + POOL.join('') + FEATS.map(f => f.label).join('') + '0123456789.-%✓…—「」·';
+  const specs = ['300', '400', '500', '700'].map(w => `${w} 40px "Noto Sans SC"`)
+    .concat(['400', '700', '900'].map(w => `${w} 40px "Noto Serif SC"`))
+    .concat(['400', '500'].map(w => `${w} 40px "JetBrains Mono"`));
+  await Promise.all(specs.map(s => document.fonts.load(s, text).catch(() => [])));
+  await document.fonts.ready;
+  for (const sc of SCENES) if (sc.measure) {
+    sc.root.style.display = 'block'; sc.measure(); sc.root.style.display = 'none'; sc._on = false;
+  }
+  return { duration: DURATION, cues: CUES };
+}
+
+// 静态胶片颗粒，减轻暗部色带
+(() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d'), img = g.createImageData(256, 256), R = rng(99);
+  for (let i = 0; i < img.data.length; i += 4) { const v = R() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  document.getElementById('grain').style.backgroundImage = `url(${c.toDataURL()})`;
+})();
+
+window.render = render;
+window.prepare = prepare;
+window.DURATION = DURATION;
+
+/* ---------- 直接在浏览器里观看 ---------- */
+if (!window.RENDER) {
+  const fit = () => { stage.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener('resize', fit); fit();
+  const btn = document.getElementById('play');
+  const audio = new Audio('music.m4a');
+  let t0 = 0;
+  prepare().then(() => { render(12.6); btn.style.display = ''; });
+  const loop = now => {
+    const t = audio.currentTime > 0 && !audio.paused ? audio.currentTime : (now - t0) / 1000;
+    render(Math.min(t, DURATION - 0.001));
+    if (t < DURATION) requestAnimationFrame(loop); else btn.style.display = '';
+  };
+  btn.addEventListener('click', () => {
+    btn.style.display = 'none';
+    audio.currentTime = 0; audio.play().catch(() => {});
+    t0 = performance.now(); requestAnimationFrame(loop);
+  });
+}
+})();
+</script>
+</body>
+</html>
